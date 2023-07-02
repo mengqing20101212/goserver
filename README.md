@@ -7,3 +7,4 @@ go lang 写的一个基础的只包含登录、协议定义、网络层 DB层ser
 <h3>5.支持云服务</h3>
 <h1>依赖</h1>
 redis7.2,mysql8,protobuf3.20
+<img src="doc/goserver框架.png">

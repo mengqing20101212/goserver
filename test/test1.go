@@ -15,3 +15,5 @@ func test1() {
 		println("word")
 	}
 }
+
+//export https_proxy=http://127.0.0.1:33210 http_proxy=http://127.0.0.1:33210 all_proxy=socks5://127.0.0.1:33211
