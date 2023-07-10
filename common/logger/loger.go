@@ -128,9 +128,9 @@ func checkSpiltFile() {
 	if fileInfo.Size() >= log.config.spiltSize {
 		oldFileName := log.file.Name()
 		dir, fileName := path.Split(strings.ReplaceAll(log.file.Name(), "\\", "/"))
-		log.file.Close()
+		_ = log.file.Close()
 		newFIleName := path.Join(dir, fmt.Sprintf("%s_%s", common.GetYYYY_MM_DD_HH_mm_ss(), fileName))
-		os.Rename(log.file.Name(), newFIleName)
+		_ = os.Rename(log.file.Name(), newFIleName)
 		// 打开新的文件
 		newFile, err := os.OpenFile(oldFileName, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0755)
 		if err != nil {
@@ -155,8 +155,23 @@ func format(msg string, level string) string {
 	var buf [64]byte
 	n := runtime.Stack(buf[:], false)
 	id := uint64(0)
-	fmt.Sscanf(string(buf[:n]), "goroutine %d", &id)
-	return fmt.Sprintf(" [coid:%d] %s %s %s,", id, time.Now().Format("2006-01-02 15:04:05.000"), level, msg)
+	_, _ = fmt.Sscanf(string(buf[:n]), "goroutine %d", &id)
+	pc := make([]uintptr, 10) // 假设最多获取 10 层调用栈
+	n = runtime.Callers(1, pc)
+	frames := runtime.CallersFrames(pc[:n])
+	fileName := ""
+	line := 0
+	funcName := ""
+	for i := 0; i < 3; i++ {
+		frame, more := frames.Next()
+		if !more {
+			break
+		}
+		_, fileName = path.Split(frame.File)
+		line = frame.Line
+		funcName = strings.Split(frame.Function, ".")[1]
+	}
+	return fmt.Sprintf(" [coid:%d] %s [%s:%d] [%s] %s %s", id, time.Now().Format("2006-01-02 15:04:05.000"), fileName, line, funcName, level, msg)
 }
 func Debug(msg string) {
 	if log.level > DEBUG {
