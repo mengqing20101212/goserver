@@ -204,3 +204,7 @@ func Error(msg string) {
 		log.receiverMsg <- msg
 	}
 }
+
+func IsDebug() bool {
+	return log.level == DEBUG
+}
