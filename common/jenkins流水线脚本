@@ -1,0 +1,161 @@
+properties([
+  parameters([
+    [
+      $class: 'ChoiceParameter',
+      choiceType: 'PT_SINGLE_SELECT',
+      name: 'env',
+      script: [
+        $class: 'GroovyScript',
+        script: [
+          classpath: [],
+          script: "return ['ly']"
+        ]
+      ]
+    ],
+    [
+      $class: 'ChoiceParameter',
+      choiceType: 'PT_SINGLE_SELECT',
+      name: 'projectServer',
+      script: [
+        $class: 'GroovyScript',
+        script: [
+          classpath: [],
+          script: "return ['teenPatti','promoter','rummy']"
+        ]
+      ]
+    ],
+    [
+      $class: 'CascadeChoiceParameter',
+      choiceType: 'PT_SINGLE_SELECT',
+      name: 'branch',
+      referencedParameters: 'projectServer',
+      script: [
+        $class: 'GroovyScript',
+        script: [
+          classpath: [],
+          script: '''switch(projectServer){
+        case"teenPatti":
+        return['liuyang_dev','liuyang_dev_v4','feature_dev']
+        case"promoter":
+        return['dev','dev_new_version']
+        case"rummy":
+        return['neo_dev','india_main_release']
+        }'''
+        ]
+      ]
+    ]
+  ])
+])
+
+pipeline {
+  agent any
+  
+  stages {
+    stage('checkParam') {
+      steps {
+        echo "env:${params.env}, project:${params.projectServer}, branch:${params.branch}"
+        echo 'Hello World'
+        script {
+          def gitUrl
+          switch (params.projectServer) {
+            case 'teenPatti':
+              gitUrl = 'ssh://git@3.110.116.118:7003/card-game/teen-patti.git'
+              break
+            case 'promoter':
+              gitUrl = 'ssh://git@3.110.116.118:7003/card-platform/promoter-system.git'
+              break
+            case 'rummy':
+              gitUrl = 'ssh://git@3.110.116.118:7003/card-game/rummy.git'
+              break
+            default:
+              echo "Invalid projectServer value"
+              return
+          }
+          echo "Git URL: ${gitUrl}"
+          env.gitUrl = gitUrl
+        }
+      }
+    }
+    stage('buildJar'){
+      steps{
+        echo "start build"
+        echo "${gitUrl}"
+        script {
+          def loginIP
+          switch (params.env) {
+            case 'ly':
+              loginIP = '172.16.1.41'
+              break
+            default:
+              echo "Invalid env value"
+              return
+          }
+          
+          // 设置环境变量
+          env.runEnv = env
+          env.projectServer = projectServer
+          env.gitBranch = branch
+          
+          echo "env:${params.env}, project:${params.projectServer}, branch:${params.branch},loginIP:${loginIP}"
+          
+          sh """
+            printenv
+            ls -l 
+            pwd
+           
+            git config --global user.name liuyang
+            git config --global user.password mengqing20101212
+          """
+          
+          switch (params.projectServer) {
+            case 'teenPatti':
+              sh """
+                cd teen-patti/teen-patti
+                git checkout -f ${branch}
+                git pull
+                rm -rf build/*
+                /var/jenkins_home/apache-maven-3.9.3/bin/mvn -v
+                /var/jenkins_home/apache-maven-3.9.3/bin/mvn clean
+                /var/jenkins_home/apache-maven-3.9.3/bin/mvn -Dmaven.test.skip=true package
+                cd build
+                tar -cvzf teenpatti.tar.gz TeenPattiAccessServer TeenPattiGameServer TeenPattiRoomServer
+                scp teenpatti.tar.gz jenkins@${loginIP}:/home/work/temp/teenpatti
+                ssh jenkins@${loginIP} '/home/work/tpDeploy.sh'
+              """
+              break
+            case 'promoter':
+              sh """
+                cd promoter-system/promoter-system
+                git checkout -f ${branch}
+                git pull
+                rm -rf target/output/*
+                /var/jenkins_home/apache-maven-3.9.3/bin/mvn -v
+                /var/jenkins_home/apache-maven-3.9.3/bin/mvn clean
+                /var/jenkins_home/apache-maven-3.9.3/bin/mvn -Dmaven.test.skip=true package
+                cd target/output
+                tar -cvzf promoter.tar.gz lib/ promoter-system-1.0.jar
+                scp promoter.tar.gz jenkins@${loginIP}:/home/work/temp/promoter
+                ssh jenkins@${loginIP} '/home/work/promoterDeploy.sh'
+              """
+              break
+            case 'rummy':
+              sh """
+                cd rummy/rummy
+                git checkout -f ${branch}
+                git pull
+                rm -rf build/*
+                /var/jenkins_home/apache-maven-3.9.3/bin/mvn -v
+                /var/jenkins_home/apache-maven-3.9.3/bin/mvn clean
+                /var/jenkins_home/apache-maven-3.9.3/bin/mvn -Dmaven.test.skip=true package
+                cd build
+                tar -cvzf rummy.tar.gz RummyCenterService RummyGameService RummyMissionService RummyPaymentService RummyAccessService RummyCurrencyService RummyMessageService RummyPaymentProxyService RummyRoomService
+                scp rummy.tar.gz jenkins@${loginIP}:/home/work/temp/rummy
+                ssh jenkins@${loginIP} '/home/work/rummyDeploy.sh'
+              """
+              break
+          }
+        }
+      }
+    }
+  }
+}
