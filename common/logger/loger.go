@@ -2,7 +2,6 @@ package logger
 
 import (
 	"fmt"
-	"goserver/common"
 	"os"
 	"path"
 	"path/filepath"
@@ -129,7 +128,7 @@ func checkSpiltFile() {
 		oldFileName := log.file.Name()
 		dir, fileName := path.Split(strings.ReplaceAll(log.file.Name(), "\\", "/"))
 		_ = log.file.Close()
-		newFIleName := path.Join(dir, fmt.Sprintf("%s_%s", common.GetYYYY_MM_DD_HH_mm_ss(), fileName))
+		newFIleName := path.Join(dir, fmt.Sprintf("%s_%s", time.Now().Format("2006_01_01_15_04_05"), fileName))
 		_ = os.Rename(log.file.Name(), newFIleName)
 		// 打开新的文件
 		newFile, err := os.OpenFile(oldFileName, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0755)

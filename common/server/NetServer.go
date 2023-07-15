@@ -1,12 +1,16 @@
 package server
 
-import "fmt"
+import (
+	"fmt"
+	"net"
+)
 
 type Server struct {
 	port        int
 	proto       string
 	codecsProto *CodeProto
 	filterChain *FilterChain
+	listener    *net.TCPListener
 }
 
 type EndPoint struct {
@@ -14,7 +18,7 @@ type EndPoint struct {
 	port uint16
 }
 
-func (e EndPoint) String() string {
+func (e *EndPoint) String() string {
 	return fmt.Sprintf("{ip:%s,port:%d}", e.ip, e.port)
 }
 
@@ -25,12 +29,13 @@ func NewEndPoint(ip string, port uint16) *EndPoint {
 type SocketChannel struct {
 	msg      Package
 	endPoint EndPoint
+	con      *net.TCPConn
 }
 
-func (e SocketChannel) String() string {
+func (e *SocketChannel) String() string {
 	return fmt.Sprintf("SocketChannel{msg:%s,endPoint:%d}", e.msg.String(), e.endPoint.String())
 }
 
-func NewSocketChannel(msg Package, endPoint EndPoint) *SocketChannel {
-	return &SocketChannel{msg: msg, endPoint: endPoint}
+func NewSocketChannel(msg *Package, endPoint *EndPoint) *SocketChannel {
+	return &SocketChannel{msg: *msg, endPoint: *endPoint}
 }
