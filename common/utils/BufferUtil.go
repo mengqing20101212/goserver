@@ -13,6 +13,9 @@ type ByteBuffer struct {
 	mark   int
 }
 
+func (self *ByteBuffer) GetBuffer() *bytes.Buffer {
+	return self.buf
+}
 func NewByteBuffer() (buffer ByteBuffer) {
 	buffer = ByteBuffer{buf: &bytes.Buffer{}, offset: 0, mark: 0}
 	return buffer
@@ -52,16 +55,16 @@ func (self *ByteBuffer) ReadByte() (b byte) {
 	return out
 }
 
-func (self *ByteBuffer) ReadUint16() (u uint16) {
+func (self *ByteBuffer) ReadUint16() (u uint16, er error) {
 	var out uint16
 	read := bytes.NewReader(self.buf.Bytes()[self.offset:])
 	err := binary.Read(read, binary.LittleEndian, &out)
 	if err != nil {
-		logger.Error(fmt.Sprintf("read uint16 error %s", err))
-		return 0
+		//logger.Error(fmt.Sprintf("read uint16 error %s", err))
+		return 0, err
 	}
 	self.offset += 2
-	return out
+	return out, nil
 }
 
 func (self *ByteBuffer) ReadInt16() (u int16) {
