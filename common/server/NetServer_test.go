@@ -15,13 +15,14 @@ func TestByteServer(t *testing.T) {
 }
 
 func TestConnecter(t *testing.T) {
+	codeProto := PackageFactory{}
 	for i := 0; i < 1000; i++ {
 		go func() {
 			sc := CreateConnect("127.0.0.1:2001")
 			logger.Init("../logs", "test1.log")
 			for {
 				pack := CreatePackage(int32(i), int32(i), uint32(time.Now().Unix()), uint16(i), bytes.NewBufferString(fmt.Sprintf("hello word %d", i)).Bytes())
-				sc.SendMsg(pack.Encode())
+				sc.SendMsg(codeProto.Encode(pack))
 				logger.Info(fmt.Sprintf("send msg:%s", pack))
 				time.Sleep(20 * time.Millisecond)
 			}

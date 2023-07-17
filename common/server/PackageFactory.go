@@ -6,10 +6,11 @@ import (
 	"goserver/common/utils"
 )
 
-type CodeProto interface {
-	Decoder(buf *utils.ByteBuffer) (packageMsg *Package, success bool)
-	Encode() (packData []byte)
+type CodeProto[T Package] interface {
+	Decoder(buf *utils.ByteBuffer) (packageMsg *T, success bool)
+	Encode(msg *T) (packData []byte)
 }
+
 type Package struct {
 	packageLen uint16
 	cmd        int32
@@ -24,7 +25,6 @@ type Package struct {
 const PackageDefaultHeadLen = 2 + 4 + 4 + 4 + 2 + 4 + 2 // packageLen（2） + cmd（4）+ sendTimer（4）+traceId（4）+ sid（2）+ seq(4) + bodyLen（2）
 
 type PackageFactory struct {
-	Package
 }
 
 func (self *PackageFactory) Decoder(buf *utils.ByteBuffer) (packageMsg *Package, success bool) {
@@ -46,23 +46,22 @@ func (self *PackageFactory) Decoder(buf *utils.ByteBuffer) (packageMsg *Package,
 	bodyLen, _ := buf.ReadUint16()
 	body := buf.ReadBytes(int(bodyLen))
 	msg := CreatePackage(cmd, traceId, sendTimer, sid, body)
-	return &msg.Package, true
+	return msg, true
 }
 
-func (self *PackageFactory) Encode() (packData []byte) {
+func (self *PackageFactory) Encode(msg *Package) (packData []byte) {
 	packBuf := utils.NewByteBuffer()
-	packBuf.WriteUint16(self.packageLen)
-	packBuf.WriteInt32(self.cmd)
-	packBuf.WriteUint32(self.sendTimer)
-	packBuf.WriteInt32(self.traceId)
-	packBuf.WriteUint16(self.sid)
-	packBuf.WriteUint16(self.bodyLen)
-	packBuf.WriteBytes(self.body)
+	packBuf.WriteUint16(msg.packageLen)
+	packBuf.WriteInt32(msg.cmd)
+	packBuf.WriteUint32(msg.sendTimer)
+	packBuf.WriteInt32(msg.traceId)
+	packBuf.WriteUint16(msg.sid)
+	packBuf.WriteUint16(msg.bodyLen)
+	packBuf.WriteBytes(msg.body)
 	return packBuf.GetBytes()
 }
-func CreatePackage(cmd int32, traceId int32, sendTimer uint32, sid uint16, body []byte) (packData *PackageFactory) {
-	pack := PackageFactory{Package{cmd: cmd, sendTimer: sendTimer, sid: sid, body: body, bodyLen: uint16(len(body)), traceId: traceId}}
-	//pack := Package{cmd: cmd, sendTimer: sendTimer, sid: sid, body: body, bodyLen: uint16(len(body)), traceId: traceId}
+func CreatePackage(cmd int32, traceId int32, sendTimer uint32, sid uint16, body []byte) (packData *Package) {
+	pack := Package{cmd: cmd, sendTimer: sendTimer, sid: sid, body: body, bodyLen: uint16(len(body)), traceId: traceId}
 	pack.packageLen = PackageDefaultHeadLen + pack.bodyLen
 	if logger.IsDebug() {
 		logger.Debug(fmt.Sprintf("new package:%s", pack.String()))

@@ -1,0 +1,15 @@
+syntax = "proto3";
+package proto;
+option go_package = ".";
+
+// this is a comment
+message csLogin {
+  string name = 1;
+  bool male = 2;
+  repeated int32 scores = 3;
+}
+message scLogin {
+  string name = 1;
+  bool male = 2;
+  repeated int32 scores = 3;
+}

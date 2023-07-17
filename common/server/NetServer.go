@@ -15,7 +15,7 @@ const DefaultMaxConnectLen = 1024
 type Server struct {
 	port          int
 	proto         string
-	codecsProto   CodeProto
+	codecsProto   CodeProto[Package]
 	filterChain   *FilterChain
 	listener      *net.TCPListener
 	ConnectManger *ConnectManger

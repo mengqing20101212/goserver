@@ -3,7 +3,9 @@ package server
 import (
 	"errors"
 	"fmt"
+	"github.com/golang/protobuf/proto"
 	"goserver/common/logger"
+	"goserver/common/protos"
 )
 
 type ConnectManger struct {
@@ -44,6 +46,9 @@ func lookupReadData(channel *SocketChannel, server *Server) {
 			} else {
 				break
 			}
+			cslogin := &protos.CsLogin{}
+			proto.UnmarshalMerge(pack.body, cslogin)
+
 		}
 
 	}
