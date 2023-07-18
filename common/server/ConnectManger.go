@@ -46,13 +46,14 @@ func loopReadData(channel *SocketChannel, server *Server) {
 			} else {
 				break
 			}
-			cslogin := &protobuf.CsLogin{}
-			proto.UnmarshalMerge(pack.body, cslogin)
-			handler := GetHandlerFactoryInstance().GetHandler(pack.cmd)
-			suc := handler.Execute(cslogin)
-			if suc {
-
+			cslogin := protobuf.CsLogin{}
+			proto.UnmarshalMerge(pack.body, &cslogin)
+			handler := CreateHandler(pack, channel, server.codecsProto)
+			result, msg := handler.Execute(&cslogin)
+			if !result {
+				return
 			}
+			fmt.Println(msg)
 		}
 
 	}
