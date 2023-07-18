@@ -1,6 +1,6 @@
 syntax = "proto3";
-package proto;
-option go_package = ".";
+package protobuf;
+option go_package = "/protobuf";
 
 // this is a comment
 message csLogin {

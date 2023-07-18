@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"goserver/common/logger"
-	"goserver/common/protos"
+	"goserver/protobuf"
 )
 
 type ConnectManger struct {
@@ -19,10 +19,10 @@ func (self *ConnectManger) AddConn(channel *SocketChannel, server *Server) {
 	}
 	self.connMap[channel.cid] = channel
 	logger.Info(fmt.Sprintf("[ConnectManger] AddConn:%s", channel))
-	go lookupReadData(channel, server)
+	go loopReadData(channel, server)
 }
 
-func lookupReadData(channel *SocketChannel, server *Server) {
+func loopReadData(channel *SocketChannel, server *Server) {
 	for {
 		bs := make([]byte, 256)
 		n, err := channel.con.Read(bs)
@@ -46,9 +46,13 @@ func lookupReadData(channel *SocketChannel, server *Server) {
 			} else {
 				break
 			}
-			cslogin := &protos.CsLogin{}
+			cslogin := &protobuf.CsLogin{}
 			proto.UnmarshalMerge(pack.body, cslogin)
+			handler := GetHandlerFactoryInstance().GetHandler(pack.cmd)
+			suc := handler.Execute(cslogin)
+			if suc {
 
+			}
 		}
 
 	}
