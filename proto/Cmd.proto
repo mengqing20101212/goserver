@@ -1,0 +1,12 @@
+syntax = "proto3";
+package protobuf;
+option go_package = "/protobuf";
+
+enum CMD
+{
+  cmd_null = 0;
+  cmd_login = 100;                                                                   //登录协议
+  cmd_login2 = 101;                                                                  //登录协议1
+  cmd_login3 = 102;                                                                  //登录协议2
+  cmd_login4 = 103;                                                                  //登录协议3
+}

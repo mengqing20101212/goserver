@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"goserver/common/logger"
-	"goserver/protobuf"
 )
 
 type ConnectManger struct {
@@ -19,10 +18,10 @@ func (self *ConnectManger) AddConn(channel *SocketChannel, server *Server) {
 	}
 	self.connMap[channel.cid] = channel
 	logger.Info(fmt.Sprintf("[ConnectManger] AddConn:%s", channel))
-	go loopReadData(channel, server)
+	go loopReadData(channel, server, self)
 }
 
-func loopReadData(channel *SocketChannel, server *Server) {
+func loopReadData(channel *SocketChannel, server *Server, mgr *ConnectManger) {
 	for {
 		bs := make([]byte, 256)
 		n, err := channel.con.Read(bs)
@@ -46,13 +45,22 @@ func loopReadData(channel *SocketChannel, server *Server) {
 			} else {
 				break
 			}
-			cslogin := protobuf.CsLogin{}
-			proto.UnmarshalMerge(pack.body, &cslogin)
-			handler := CreateHandler(pack, channel, server.codecsProto)
-			result, msg := handler.Execute(&cslogin)
+			reqMessage := CreateProtoMessage(pack.cmd)
+			proto.UnmarshalMerge(pack.body, reqMessage)
+			handler := CreateHandler(pack)
+			result, msg := handler.Execute(reqMessage, channel)
 			if !result {
+				logger.Info(fmt.Sprintf(" package no result req:%s, pack:%s", reqMessage.String(), pack.String()))
+				continue
+			}
+			response, err := proto.Marshal(msg)
+			if err != nil {
+				logger.Error(fmt.Sprintf(" parse response req:%s, response:%s, pack:%s, error:%s", reqMessage.String(), response, pack.String(), err))
+				mgr.DelConn(channel)
 				return
 			}
+			resPack := CreatePackage(pack.cmd, 0, pack.sendTimer, uint16(channel.cid), response)
+			channel.SendMsg(server.codecsProto.Encode(resPack))
 			fmt.Println(msg)
 		}
 
