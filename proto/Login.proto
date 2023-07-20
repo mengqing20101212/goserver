@@ -3,12 +3,14 @@ package protobuf;
 option go_package = "/protobuf";
 
 // this is a comment
-message csLogin {
+message csLogin
+{
   string name = 1;
   bool male = 2;
   repeated int32 scores = 3;
 }
-message scLogin {
+message scLogin
+{
   string name = 1;
   bool male = 2;
   repeated int32 scores = 3;
