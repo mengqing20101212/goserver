@@ -39,6 +39,7 @@ func (self *Server) Start() {
 	self.filterChain.AddFilter(&IpFilter{})
 	self.codecsProto = &PackageFactory{}
 	ipaddr := net.TCPAddr{Port: self.port}
+	DefaultInitHandler()
 	lis, err := net.ListenTCP("tcp", &ipaddr)
 	if err != nil {
 		logger.Error(fmt.Sprintf("[Server] start ListenTCP error:%s", err))
@@ -66,23 +67,21 @@ func (self *Server) OnAccept(con net.Conn, cid int32) {
 	}
 	addr := tcpConn.RemoteAddr()
 	sc := SocketChannel{
-		endPoint:   addr,
-		cid:        cid,
-		con:        tcpConn,
-		outputData: make(chan []byte, 64),
-		inputMsg:   utils.NewByteBufferByBuf(bytes.NewBuffer(make([]byte, DefaultInputLen))),
+		endPoint: addr,
+		cid:      cid,
+		con:      tcpConn,
+		inputMsg: utils.NewByteBufferByBuf(bytes.NewBuffer(make([]byte, DefaultInputLen))),
 	}
 	sc.inputMsg.GetBuffer().Reset()
 	self.ConnectManger.AddConn(&sc, self)
-	go sc.sendMsg()
 }
 
 type SocketChannel struct {
-	endPoint   net.Addr
-	cid        int32
-	con        *net.TCPConn
-	inputMsg   utils.ByteBuffer
-	outputData chan []byte
+	endPoint net.Addr
+	socketIp string
+	cid      int32
+	con      *net.TCPConn
+	inputMsg utils.ByteBuffer
 }
 
 func (e *SocketChannel) String() string {
@@ -90,22 +89,18 @@ func (e *SocketChannel) String() string {
 }
 
 func (self *SocketChannel) SendMsg(data []byte) {
-	self.outputData <- data
-}
-
-func (self *SocketChannel) sendMsg() {
-	for {
-		msg, ok := <-self.outputData
-		if !ok {
-			self.Close("close by sendMsg msg, ok <- self.outputData")
-			return
+	if self.IsConnect() {
+		_, err := self.con.Write(data)
+		if err != nil {
+			self.Close(fmt.Sprintf("write msg to remote error:%s", err))
 		}
-		self.con.Write(msg)
+	} else {
+		logger.Error(fmt.Sprintf("socket is close endPoint:%s", self.endPoint))
 	}
 }
 
-func (self SocketChannel) IsConnet() bool {
-	return self.cid == -1
+func (self SocketChannel) IsConnect() bool {
+	return self.cid != -1
 }
 
 func (e *SocketChannel) Close(s string) {

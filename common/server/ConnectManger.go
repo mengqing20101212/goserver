@@ -5,20 +5,12 @@ import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"goserver/common/logger"
+	"sync"
 )
 
 type ConnectManger struct {
 	connMap map[int32]*SocketChannel
-}
-
-func (self *ConnectManger) AddConn(channel *SocketChannel, server *Server) {
-	if self.connMap[channel.cid] != nil {
-		logger.Error(fmt.Sprintf("[ConnectManger] repeact add SocketChannel:%s", channel))
-		return
-	}
-	self.connMap[channel.cid] = channel
-	logger.Info(fmt.Sprintf("[ConnectManger] AddConn:%s", channel))
-	go loopReadData(channel, server, self)
+	lock    sync.Mutex
 }
 
 func loopReadData(channel *SocketChannel, server *Server, mgr *ConnectManger) {
@@ -45,29 +37,54 @@ func loopReadData(channel *SocketChannel, server *Server, mgr *ConnectManger) {
 			} else {
 				break
 			}
-			reqMessage := CreateProtoMessage(pack.cmd)
-			proto.UnmarshalMerge(pack.body, reqMessage)
+			reqMessage := CreateProtoRequestMessage(pack.cmd)
+			if reqMessage == nil {
+				logger.Error(fmt.Sprintf("Message not found pack:%s", pack))
+				mgr.DelConn(channel)
+				return
+			}
+			reqMessage.Reset()
+			err = proto.UnmarshalMerge(pack.body, reqMessage)
+			if err != nil {
+				logger.Error(fmt.Sprintf("UnmarshalMerge pack:%s  error:%s", pack, err))
+				mgr.DelConn(channel)
+				return
+			}
 			handler := CreateHandler(pack)
-			result, msg := handler.Execute(reqMessage, channel)
-			if !result {
+			returnFlag, response := handler.Execute(reqMessage, channel)
+			if !returnFlag {
 				logger.Info(fmt.Sprintf(" package no result req:%s, pack:%s", reqMessage.String(), pack.String()))
 				continue
 			}
-			response, err := proto.Marshal(msg)
+			responseData, err := proto.Marshal(response)
 			if err != nil {
 				logger.Error(fmt.Sprintf(" parse response req:%s, response:%s, pack:%s, error:%s", reqMessage.String(), response, pack.String(), err))
 				mgr.DelConn(channel)
 				return
 			}
-			resPack := CreatePackage(pack.cmd, 0, pack.sendTimer, uint16(channel.cid), response)
+			resPack := CreatePackage(pack.cmd, pack.traceId, pack.sendTimer, pack.sid, responseData)
 			channel.SendMsg(server.codecsProto.Encode(resPack))
-			fmt.Println(msg)
+			fmt.Println(response)
 		}
 
 	}
 }
 
+func (self *ConnectManger) AddConn(channel *SocketChannel, server *Server) {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+	if self.connMap[channel.cid] != nil {
+		logger.Error(fmt.Sprintf("[ConnectManger] repeact add SocketChannel:%s", channel))
+		return
+	}
+	self.connMap[channel.cid] = channel
+	logger.Info(fmt.Sprintf("[ConnectManger] AddConn:%s", channel))
+	go loopReadData(channel, server, self)
+}
+
 func (self *ConnectManger) DelConn(channel *SocketChannel) {
+	self.lock.Lock()
+	defer self.lock.Unlock()
 	delete(self.connMap, channel.cid)
 	logger.Info(fmt.Sprintf("[ConnectManger] delete SocketChannel:%s", channel))
 }

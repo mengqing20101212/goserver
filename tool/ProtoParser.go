@@ -2,12 +2,15 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
+	"text/template"
 )
 
 const pbDir = "G:\\WORK\\me\\goserver\\proto"
@@ -34,7 +37,67 @@ func main() {
 	fmt.Println("start parse proto buffer")
 	loadProtoFiles(pbDir)
 	fmt.Println(fileProtoMap)
+	createGoHandlerFile()
 	fmt.Println("end parse proto buffer")
+}
+
+func createGoHandlerFile() {
+	cmdMap := make(map[string]int)
+	for key, val := range fileProtoMap {
+		if key == "CMD" {
+			for _, filed := range val.filedList {
+				intVal, err := strconv.Atoi(strings.TrimSpace(filed.value))
+				if err != nil {
+					fmt.Println(err)
+				}
+				cmdMap[strings.TrimSpace(filed.filedName)] = intVal
+			}
+		}
+	}
+
+	cmdHandler := make(map[int]string)
+	for key, _ := range fileProtoMap {
+		if key[:2] == "cs" {
+			handler := strings.ToLower(key[2:])
+			cmd := cmdMap[handler]
+			if cmd != 0 {
+				cmdHandler[cmd] = key[2:]
+			}
+		}
+	}
+
+	if len(cmdHandler) <= 0 {
+		fmt.Println("len(cmdHandler) <= 0 fileProtoMap：", fileProtoMap)
+		return
+	}
+
+	// Relative path to the template file
+	relativePath := "HandlerFactory.tmpl"
+
+	// Resolve the absolute path using filepath.Join
+	absPath := filepath.Join(pbDir, relativePath)
+	tmpl, err := template.New("HandlerFactory.tmpl").ParseFiles(absPath)
+	if err != nil {
+		fmt.Println("Error parsing template:", err)
+		return
+	}
+
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, cmdHandler)
+	if err != nil {
+		fmt.Println("mapTemplate Execute error :", err)
+	}
+	fmt.Println(buf.String())
+	outFile := "../common/server/HandlerFactory.go"
+	outFile = filepath.Join(pbDir, outFile)
+	os.Remove(outFile)
+	fs, err := os.OpenFile(outFile, os.O_RDWR|os.O_CREATE, 0755)
+	defer fs.Close()
+	if err != nil {
+		fmt.Println(" err:", err)
+		return
+	}
+	fs.Write(buf.Bytes())
 }
 
 func loadProtoFiles(pbDir string) {
@@ -50,8 +113,9 @@ func loadProtoFiles(pbDir string) {
 	i := 0
 	var wg sync.WaitGroup
 
-	wg.Add(2)
-
+	waitNum := 0
+	fileList := make([]string, 0)
+	cmdFileName := ""
 	for _, file := range files {
 		fileStat, err := os.Stat(file)
 		i++
@@ -69,13 +133,18 @@ func loadProtoFiles(pbDir string) {
 				continue
 			}
 			fileNameOnly := strings.TrimSuffix(fileStat.Name(), fileType)
+			waitNum++
 			if fileNameOnly == "Cmd" {
-				go parseCmdFile(file, &wg)
+				cmdFileName = file
 			} else {
-				go parseNormalFile(file, &wg)
+				fileList = append(fileList, file)
 			}
 		}
-		fmt.Println(file)
+	}
+	wg.Add(waitNum)
+	go parseCmdFile(cmdFileName, &wg)
+	for _, file := range fileList {
+		go parseNormalFile(file, &wg)
 	}
 	wg.Wait()
 }
@@ -84,11 +153,10 @@ func parseNormalFile(name string, wg *sync.WaitGroup) {
 	fs, err := os.OpenFile(name, os.O_RDWR, 0755)
 	if err != nil {
 		fmt.Println("parseCmdFile error :", err, "name:", name)
-		return
+		os.Exit(1)
 	}
 	defer fs.Close()
 	defer wg.Done()
-	// 创建一个新的 bufio.Scanner 来读取文件内容
 	scanner := bufio.NewScanner(fs)
 
 	// 逐行读取文件内容
@@ -126,6 +194,7 @@ func parseNormalFile(name string, wg *sync.WaitGroup) {
 			line = line[:endIndex]
 			ss := strings.Split(line, "=")
 			if len(ss) != 2 {
+				fmt.Println("this line:", line, ", ss.lne != 2 ")
 				continue
 			}
 			leftss := strings.Split(strings.TrimSpace(ss[0]), " ")
@@ -186,9 +255,14 @@ func parseCmdFile(name string, wg *sync.WaitGroup) {
 			line = line[:endIndex]
 			ss := strings.Split(line, "=")
 			if len(ss) != 2 {
+				fmt.Println("error line: ", line, " ss.len != 2")
 				continue
 			}
 			nameIndex := strings.Index(ss[0], "cmd_")
+			if nameIndex < 0 {
+				fmt.Println("this cmd not found  prefix cmd_ ")
+				os.Exit(1)
+			}
 			filed := FiledProto{
 				filedType: "enum",
 				filedName: ss[0][nameIndex+4:],

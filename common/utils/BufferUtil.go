@@ -44,6 +44,7 @@ func (self *ByteBuffer) RestMark() {
 }
 
 func (self *ByteBuffer) ReadByte() (b byte) {
+	self.checkOffset()
 	var out byte
 	read := bytes.NewReader(self.buf.Bytes()[self.offset:])
 	err := binary.Read(read, binary.LittleEndian, &out)
@@ -56,6 +57,7 @@ func (self *ByteBuffer) ReadByte() (b byte) {
 }
 
 func (self *ByteBuffer) ReadUint16() (u uint16, er error) {
+	self.checkOffset()
 	var out uint16
 	read := bytes.NewReader(self.buf.Bytes()[self.offset:])
 	err := binary.Read(read, binary.LittleEndian, &out)
@@ -68,6 +70,7 @@ func (self *ByteBuffer) ReadUint16() (u uint16, er error) {
 }
 
 func (self *ByteBuffer) ReadInt16() (u int16) {
+	self.checkOffset()
 	var out int16
 	read := bytes.NewReader(self.buf.Bytes()[self.offset:])
 	err := binary.Read(read, binary.LittleEndian, &out)
@@ -80,6 +83,7 @@ func (self *ByteBuffer) ReadInt16() (u int16) {
 }
 
 func (self *ByteBuffer) ReadUint32() (u uint32) {
+	self.checkOffset()
 	var out uint32
 	read := bytes.NewReader(self.buf.Bytes()[self.offset:])
 	err := binary.Read(read, binary.LittleEndian, &out)
@@ -92,6 +96,7 @@ func (self *ByteBuffer) ReadUint32() (u uint32) {
 }
 
 func (self *ByteBuffer) ReadInt32() (u int32) {
+	self.checkOffset()
 	var out int32
 	read := bytes.NewReader(self.buf.Bytes()[self.offset:])
 	err := binary.Read(read, binary.LittleEndian, &out)
@@ -104,6 +109,7 @@ func (self *ByteBuffer) ReadInt32() (u int32) {
 }
 
 func (self *ByteBuffer) ReadUint64() (u uint64) {
+	self.checkOffset()
 	var out uint64
 	read := bytes.NewReader(self.buf.Bytes()[self.offset:])
 	err := binary.Read(read, binary.LittleEndian, &out)
@@ -116,6 +122,7 @@ func (self *ByteBuffer) ReadUint64() (u uint64) {
 }
 
 func (self *ByteBuffer) ReadInt64() (u int64) {
+	self.checkOffset()
 	var out int64
 	read := bytes.NewReader(self.buf.Bytes()[self.offset:])
 	err := binary.Read(read, binary.LittleEndian, &out)
@@ -128,17 +135,19 @@ func (self *ByteBuffer) ReadInt64() (u int64) {
 }
 
 func (self *ByteBuffer) ReadBytes(len int) (bs []byte) {
+	self.checkOffset()
 	out := make([]byte, len)
 	read := bytes.NewReader(self.buf.Bytes()[self.offset:])
 	err := binary.Read(read, binary.LittleEndian, &out)
 	if err != nil {
-		logger.Error(fmt.Sprintf("read Bytes error %s", err))
+		logger.Error(fmt.Sprintf("read Bytes error %s, redLen:%d offset:%d, buf len:%d, cap:%d", err, len, self.offset, self.buf.Len(), self.buf.Cap()))
 		return out
 	}
 	self.offset += len
 	return out
 }
 func (self *ByteBuffer) ReadAllByte() (bs []byte) {
+	self.checkOffset()
 	out := make([]byte, self.buf.Len()-self.offset)
 	read := bytes.NewReader(self.buf.Bytes()[self.offset:])
 	err := binary.Read(read, binary.LittleEndian, &out)
@@ -146,7 +155,7 @@ func (self *ByteBuffer) ReadAllByte() (bs []byte) {
 		logger.Error(fmt.Sprintf("read AllByte error %s", err))
 		return out
 	}
-	self.offset = self.buf.Len()
+	self.offset += self.buf.Len()
 	return out
 }
 
@@ -220,4 +229,15 @@ func (self *ByteBuffer) WriteBytes(b []byte) (l int, success bool) {
 
 func (self *ByteBuffer) GetBytes() (bs []byte) {
 	return self.buf.Bytes()[self.offset:self.buf.Len()]
+}
+
+func (self *ByteBuffer) checkOffset() {
+	if self.offset > self.buf.Len() {
+		logger.Info(fmt.Sprintf("reset offset 0 , self.offset:%d > self.buf.Len():%d  cap:%d bufPtr:%p", self.offset, self.buf.Len(), self.buf.Cap(), self.buf))
+		self.offset = 0
+	}
+}
+
+func (self *ByteBuffer) Len() int {
+	return self.buf.Len() - self.offset
 }

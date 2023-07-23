@@ -1,9 +1,11 @@
 package server
 
 import (
-	"bytes"
 	"fmt"
+	"github.com/golang/protobuf/proto"
 	"goserver/common/logger"
+	"goserver/protobuf"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -15,18 +17,26 @@ func TestByteServer(t *testing.T) {
 }
 
 func TestConnecter(t *testing.T) {
-	codeProto := PackageFactory{}
-	for i := 0; i < 1000; i++ {
-		go func() {
-			sc := CreateConnect("127.0.0.1:2001")
-			logger.Init("../logs", "test1.log")
-			for {
-				pack := CreatePackage(int32(i), int32(i), uint32(time.Now().Unix()), uint16(i), bytes.NewBufferString(fmt.Sprintf("hello word %d", i)).Bytes())
-				sc.SendMsg(codeProto.Encode(pack))
-				logger.Info(fmt.Sprintf("send msg:%s", pack))
-				time.Sleep(20 * time.Millisecond)
+	logger.Init("../logs", "test1.log")
+	for i := 0; i < 5000; i++ {
+		time.Sleep(3 * time.Millisecond)
+		go func(i int) {
+			codeProto := PackageFactory{}
+			sc := CreateConnect("127.0.0.1:2001", &codeProto)
+			req := protobuf.CsLogin{
+				Name: "hello Name:" + strconv.Itoa(i),
+				Male: i%2 == 1,
 			}
-		}()
+			for {
+				flag, responsePack := sc.SendMsgData(protobuf.CMD_cmd_login, &req)
+				if flag {
+					response := protobuf.ScLogin{}
+					proto.Unmarshal(responsePack.body, &response)
+					logger.Info(fmt.Sprintf("receive msg:%s ", response.String()))
+				}
+				time.Sleep(1 * time.Second)
+			}
+		}(i)
 	}
 
 	time.Sleep(10240 * time.Second)

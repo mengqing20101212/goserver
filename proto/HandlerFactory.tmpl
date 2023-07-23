@@ -1,0 +1,68 @@
+package server
+
+import (
+	"fmt"
+	"github.com/golang/protobuf/proto"
+	"goserver/common/logger"
+	"goserver/protobuf"
+)
+type MsgHandlerInterface interface {
+	Execute(msg proto.Message, channel *SocketChannel) (res bool, message proto.Message)
+	HandLerName() string
+}
+
+var handlerMap = make(map[int32]MsgHandlerInterface)
+
+type EmptyHandler struct {
+}
+
+func (resf *EmptyHandler) Execute(msg proto.Message, channel *SocketChannel) (res bool, message proto.Message) {
+	logger.Error("not run EmptyHandler error")
+	return false, nil
+}
+func (self *EmptyHandler) HandLerName() string {
+	return "EmptyHandler"
+}
+
+
+{{range  $cmd, $handler :=.}}
+type {{$handler}}Handler struct {EmptyHandler}
+func (self *{{$handler}}Handler) HandLerName() string {
+	return "{{$handler}}Handler"
+}
+{{end}}
+
+
+
+
+
+func CreateHandler(pack *Package) MsgHandlerInterface {
+	handler := handlerMap[pack.cmd]
+	if handler != nil {
+		return handler
+	}
+	logger.Error(fmt.Sprintf(" not found msg Handler cmd:%d, pack:%s", pack.cmd, pack))
+	return nil
+}
+
+func InitHandler(cmd int32, handler MsgHandlerInterface) {
+	handlerMap[cmd] = handler
+	logger.Info(fmt.Sprintf(" add new cmdId:%d, handler:%s", cmd, handler.HandLerName()))
+}
+
+func DefaultInitHandler() {
+    {{ range $cmd, $handler :=. }}
+    InitHandler({{$cmd}}, &{{$handler}}Handler{})
+     {{end}}
+}
+
+func CreateProtoRequestMessage(cmd int32) (msg proto.Message) {
+	switch cmd {
+	 {{range $cmd, $message := .}}
+	 case {{$cmd}}:
+     		return &protobuf.Cs{{$message}}{}
+        {{end}}
+	}
+	logger.Error(fmt.Sprintf(" not found cmdId:%d", cmd))
+	return nil
+}

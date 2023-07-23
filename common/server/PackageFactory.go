@@ -34,8 +34,8 @@ func (self *PackageFactory) Decoder(buf *utils.ByteBuffer) (packageMsg *Package,
 		buf.RestMark()
 		return nil, false
 	}
-	byteLen := buf.GetBuffer().Len()
-	if byteLen < int(packLen) {
+	byteLen := buf.Len()
+	if byteLen+2 < int(packLen) {
 		buf.RestMark()
 		return nil, false
 	}
@@ -44,6 +44,7 @@ func (self *PackageFactory) Decoder(buf *utils.ByteBuffer) (packageMsg *Package,
 	traceId := buf.ReadInt32()
 	sid, _ := buf.ReadUint16()
 	bodyLen, _ := buf.ReadUint16()
+	_ = buf.ReadInt32()
 	body := buf.ReadBytes(int(bodyLen))
 	msg := CreatePackage(cmd, traceId, sendTimer, sid, body)
 	return msg, true
@@ -57,6 +58,7 @@ func (self *PackageFactory) Encode(msg *Package) (packData []byte) {
 	packBuf.WriteInt32(msg.traceId)
 	packBuf.WriteUint16(msg.sid)
 	packBuf.WriteUint16(msg.bodyLen)
+	packBuf.WriteInt32(int32(msg.seq))
 	packBuf.WriteBytes(msg.body)
 	return packBuf.GetBytes()
 }
