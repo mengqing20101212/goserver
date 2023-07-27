@@ -1,6 +1,7 @@
 package db
 
 import (
+	"goserver/table"
 	"testing"
 )
 
@@ -34,7 +35,7 @@ func TestInitDefaultDataBase(t *testing.T) {
 			if got := InitDefaultDataBase(tt.args.userName, tt.args.passWord, tt.args.ip, tt.args.databases, tt.args.port); got != tt.want {
 				t.Errorf("InitDefaultDataBase() = %v, want %v", got, tt.want)
 			}
-			test := SysTableSqlOpt{}
+			test := table.NewSysTable()
 			test.SelectAll()
 		})
 	}
