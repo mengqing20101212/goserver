@@ -17,6 +17,7 @@ const pbDir = "G:\\WORK\\me\\goserver\\proto"
 
 var pbFiles = make([]string, 10)
 var fileProtoMap = make(map[string]MsgProto)
+var lock = sync.Mutex{}
 
 type FiledProto struct {
 	filedType string
@@ -184,7 +185,9 @@ func parseNormalFile(name string, wg *sync.WaitGroup) {
 			begin = true
 			continue
 		} else if strings.Contains(line, "}") {
+			lock.Lock()
 			fileProtoMap[msgProto.pbName] = msgProto
+			lock.Unlock()
 			begin = false
 		} else if begin {
 			endIndex := strings.Index(line, ";")
@@ -245,7 +248,9 @@ func parseCmdFile(name string, wg *sync.WaitGroup) {
 			begin = true
 			continue
 		} else if strings.Contains(line, "}") {
+			lock.Lock()
 			fileProtoMap[msgProto.pbName] = msgProto
+			lock.Unlock()
 			return
 		} else if begin {
 			endIndex := strings.Index(line, ";")

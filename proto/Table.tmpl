@@ -1,0 +1,110 @@
+package table
+import (
+	"database/sql"
+	"errors"
+	"fmt"
+	"github.com/golang/protobuf/proto"
+	"goserver/common/db"
+	"goserver/common/logger"
+	"unsafe"
+)
+
+type {{.FileName}}TableSqlOptional struct {
+}
+func (self *{{.FileName}}TableSqlOptional) OnQuerySuccess(flag bool, rows *sql.Rows) any {
+	list := make([]{{.FileName}}, 0)
+	for rows.Next() {
+		data := {{.FileName}}{}
+		{{makeScanBytes .FiledList}}
+		rows.Scan({{ (scanVal .FiledList) }})
+		{{protoUnmarshal .FiledList}}
+
+		list = append(list, data)
+	}
+	return list
+}
+
+func (self *{{.FileName}}TableSqlOptional) selectSql(sql string, params ...any) ([]Account, error) {
+	manger := db.GetDataBaseManger()
+	if manger == nil || !manger.IsConnectFlag() {
+		return nil, errors.New(" {{.FileName}}TableSqlOptional not found DataBaseManger or DataBaseManger not connect")
+	}
+
+	res, list := db.GetDataBaseManger().Query(sql, params, self)
+	if res {
+		return list.([]{{.FileName}}), nil
+	}
+	return nil, errors.New(fmt.Sprintf("not found data by sql:%s", sql))
+}
+func (self *{{.FileName}}TableSqlOptional) Save(data *{{.FileName}}) (bool, error) {
+	{{saveSqlData .}}
+	return true, nil
+}
+
+func (self *{{.FileName}}TableSqlOptional) SelectAll() ([]{{.FileName}}, error) {
+	return self.selectSql("select * from account limit 1000", nil)
+}
+
+type {{.FileName}}TableProxy struct {
+	{{.FileName}}
+	{{.FileName}}TableSqlOptional
+	changeFlag bool
+}
+
+{{createSetGet . }}
+
+
+
+// New{{.FileName}}Table isCache 初始化该数据库{{.FileName}}表的时候，是否给 TableCacheService 托管， true则数据的入库操作由
+// TableCacheService 托管默认 10秒钟扫描该实体，保存入库。 false 则需要自己保存.
+func New{{.FileName}}Table(isCache bool) *{{.FileName}}TableProxy {
+	table := &{{.FileName}}TableProxy{changeFlag: false}
+	if isCache {
+		db.GetCacheService().AddCacheFunc(unsafe.Pointer(table), table.autoSaveData)
+	}
+	return table
+}
+
+// Destroy 如果 {{.FileName}}表的数据由 TableCacheService 托管时，在该数据生命周期结束卸载时候 需要手动调用一下该方法，从TableCacheService
+// 中删除
+func (self *{{.FileName}}TableProxy) Destroy() {
+	db.GetCacheService().DelCacheFunc(unsafe.Pointer(self))
+	if self.changeFlag {
+		self.autoSaveData()
+	}
+}
+
+func FindOne{{.FileName}}Table(id uint64, isCache bool) *{{.FileName}}TableProxy {
+	sql := "select * from {{ToLower .FileName}} where id=?;"
+	opt := {{.FileName}}TableSqlOptional{}
+	list, err := opt.selectSql(sql, id)
+	if err != nil {
+		return nil
+	}
+	if len(list) > 0 {
+		data := New{{.FileName}}Table(isCache)
+		data.{{.FileName}} = list[0]
+		data.{{.FileName}}TableSqlOptional = opt
+		return data
+	}
+	return nil
+}
+
+func (self *{{.FileName}}TableProxy) autoSaveData() {
+	if self.changeFlag {
+		self.changeFlag = false
+		saveFlag, err := self.Save(&self.{{.FileName}})
+		if err != nil {
+			self.changeFlag = true
+			logger.Error(fmt.Sprintf("autoSaveData save error :%s, data:%v ", err, self.{{.FileName}}))
+			return
+		}
+		if saveFlag {
+			self.changeFlag = false
+		} else {
+			self.changeFlag = true
+		}
+	}
+}
+
+

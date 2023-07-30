@@ -31,15 +31,6 @@ func (self *LoginHandler) HandLerName() string {
 	return "LoginHandler"
 }
 
-func (self *LoginHandler) Execute(msg proto.Message, channel *SocketChannel) (res bool, message proto.Message) {
-	req := msg.(*protobuf.CsLogin)
-	response := protobuf.ScLogin{
-		Male: true,
-		Name: req.Name,
-	}
-	return true, &response
-}
-
 func CreateHandler(pack *Package) MsgHandlerInterface {
 	handler := handlerMap[pack.cmd]
 	if handler != nil {
@@ -62,6 +53,7 @@ func DefaultInitHandler() {
 
 func CreateProtoRequestMessage(cmd int32) (msg proto.Message) {
 	switch cmd {
+
 	case 100:
 		return &protobuf.CsLogin{}
 

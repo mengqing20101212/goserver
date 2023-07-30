@@ -51,7 +51,8 @@ func (self *DBManger) Query(sqlStr string, params any, sqlOpt TableInterface) (b
 		return false, nil
 	}
 	defer rows.Close()
-	return true, sqlOpt.OnQuerySuccess(true, rows)
+	resultList := sqlOpt.OnQuerySuccess(true, rows)
+	return resultList != nil, resultList
 }
 
 func (self *DBManger) Insert(sql string, params any) bool {
@@ -81,13 +82,13 @@ func InitDataBase(manger *DBManger, userName, passWord, ip, databases string, po
 	err = database.Ping()
 	if err != nil {
 		database.Close()
-		//logger.Error(fmt.Sprintf(" InitDataBase Ping databases error err :%s, userName:%s, passWord:%s, ip:%s, databases:%s, port:%d, dbUrl:%s", err, userName, passWord, ip, database, port, dbUrl))
+		logger.Error(fmt.Sprintf(" InitDataBase Ping databases error err :%s, userName:%s, passWord:%s, ip:%s, databases:%s, port:%d, dbUrl:%s", err, userName, passWord, ip, database, port, dbUrl))
 		return false
 	}
 	manger.dbUrl = dbUrl
 	manger.db = database
 	manger.connectFlag = true
-	//logger.Info(fmt.Sprintf("InitDataBase success dbUrl:%s", dbUrl))
+	logger.Info(fmt.Sprintf("InitDataBase success dbUrl:%s", dbUrl))
 	return true
 }
 

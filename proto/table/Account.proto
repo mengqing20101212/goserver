@@ -1,0 +1,29 @@
+syntax = "proto3";
+package protobuf;
+option go_package = "/table";
+
+message RoleShow
+{
+  uint64 role_id = 1;
+  uint32 server_id = 2;
+  string role_name = 3;
+  uint32 lv = 4;
+  uint32 last_login_timer = 5;
+  uint32 last_logout_timer =6;
+}
+
+message RoleShowList
+{
+  RoleShow role = 1;
+}
+
+message Account
+{
+  uint64 account_id = 1;
+  string account_name = 2;
+  uint32 create_timer = 3;
+  uint32 login_timer = 4;
+  uint32 logout_timer = 5;
+  string phone = 6;
+  RoleShowList role_list = 7;
+}
