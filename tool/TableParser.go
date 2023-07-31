@@ -46,6 +46,53 @@ func main() {
 }
 
 func createSqlFile() {
+	tempOutFile := filepath.Join(TablePbDir, "../../script/sql", "tempInit.sql")
+	outFile := filepath.Join(TablePbDir, "../../script/sql", "Init.sql")
+	os.Remove(tempOutFile)
+	sqlList := make([]string, 0)
+	for _, data := range tableFileProtoMap {
+		if strings.ToLower(data.PbName) != strings.ToLower(data.FileName) {
+			continue
+		}
+		sql := ""
+		lastFiled := TableFiledProto{}
+		for i, filed := range data.FiledList {
+			if i == 0 {
+
+				sql += "\r\nCREATE TABLE IF NOT EXISTS `" + strings.ToLower(data.FileName) + "` ("
+				sql += "`" + filed.FiledName + "` " + getDBType(filed.FiledType) + " NOT NULL,"
+				sql += "PRIMARY KEY (`" + filed.FiledName + "`)"
+				sql += ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci; \n"
+			} else {
+				sql += " ALTER TABLE `" + strings.ToLower(data.FileName) + "` ADD COLUMN `" + filed.FiledName + "` " + getDBType(filed.FiledType) + " NULL AFTER `" + lastFiled.FiledName + "`; \n"
+			}
+			lastFiled = filed
+		}
+		sqlList = append(sqlList, sql)
+	}
+
+	fs, err := os.OpenFile(tempOutFile, os.O_CREATE|os.O_RDWR, 0755)
+	if err != nil {
+		fmt.Println("open file tempOutFile:", tempOutFile, ", err:", err)
+		return
+	}
+	fs.WriteString(strings.Join(sqlList, "\r\n"))
+	os.Remove(outFile)
+	fs.Close()
+	os.Rename(tempOutFile, outFile)
+}
+
+func getDBType(filedType string) string {
+	if filedType == "uint64" || filedType == "int64" || filedType == "uint32" || filedType == "int32" {
+		return "int"
+
+	} else if filedType == "bool" {
+		return "TINYINT(1)"
+	} else if filedType == "string" {
+		return "varchar(255)"
+	} else {
+		return "mediumblob"
+	}
 
 }
 
@@ -183,15 +230,6 @@ func saveSqlData(data TableMsgProto) string {
 	return result
 }
 
-//	func (self *AccountTableProxy) GetAccountId() uint64 {
-//		return self.AccountId
-//	}
-//
-//	func (self *AccountTableProxy) SetAccountId(accountId uint64) *AccountTableProxy {
-//		self.changeFlag = true
-//		self.AccountId = accountId
-//		return self
-//	}
 func createSetGet(data TableMsgProto) string {
 	result := ""
 	for _, filed := range data.FiledList {
