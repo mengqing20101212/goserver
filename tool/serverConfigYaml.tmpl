@@ -1,0 +1,24 @@
+serverId: {{.Id}}                 #服务器id
+name: {{.Name}}                   #服务器名称
+zoneId: {{.ZoneId}}               #战区ID
+partId: {{.PartId}}               #小区ID
+type:   {{.ServerType}}           #类型
+port: {{.Port}}                   #监听端口
+groupId: {{.GroupId}}             #组id
+groupName: {{.GroupName}}         #服务器组名称
+inputSize: {{.InputSize}}         #socket连接上行数据buffer大小
+outPutSize: {{.OutPutSize}}       #socket连接下行数据buffer大小
+maxConnectNum: {{.MaxConnectNum}} #最大连接数
+
+mysql:
+ ip: {{.MysqlIp}}                 #数据库IP
+ port: {{.MysqlPort}}             #数据库端口
+ username: {{.MysqlUsername}}     #数据库用户名
+ password: {{.MysqlPassword}}     #数据库密码
+ dbname: {{.MysqlDbname}}         #数据库
+
+redis:
+ ip: {{.RedisIp}}                 #redis IP
+ port: {{.RedisPort}}             #redis 端口
+ username: {{.RedisUsername}}
+ password: {{.RedisPassword}}

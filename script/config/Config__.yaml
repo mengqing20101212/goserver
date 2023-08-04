@@ -1,0 +1,25 @@
+serverId:                  #服务器id
+name:                    #服务器名称
+zoneId:                #战区ID
+partId:                #小区ID
+type:              #类型
+port:                    #监听端口
+groupId:              #组id
+groupName:          #服务器组名称
+inputSize: 0         #socket连接上行数据buffer大小
+outPutSize: 0       #socket连接下行数据buffer大小
+maxConnectNum:  #最大连接数
+
+mysql:
+ ip:                  #数据库IP
+ port:              #数据库端口
+ username:      #数据库用户名
+ password:      #数据库密码
+ dbname:          #数据库
+
+redis:
+ ip:                  #redis IP
+ port:              #redis 端口
+ username: 
+ password: 
+rd: 
