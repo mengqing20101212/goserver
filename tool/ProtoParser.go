@@ -34,7 +34,7 @@ const (
 	enum = iota
 )
 
-func main() {
+func main1() {
 	fmt.Println("start parse proto buffer")
 	loadProtoFiles(pbDir)
 	fmt.Println(fileProtoMap)

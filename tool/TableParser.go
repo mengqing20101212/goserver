@@ -32,7 +32,7 @@ type TableMsgProto struct {
 	FileName  string
 }
 
-func main() {
+func main2() {
 	fmt.Println("start parse table buffer")
 	args := os.Args
 	if len(args) > 1 {
@@ -129,7 +129,7 @@ func createGoTableFile() {
 		outFile = filepath.Join(TablePbDir, outFile, fileName+"Table.go")
 		strBegin := "//*****begin****//"
 		strEnd := "//*****end****//"
-		scanExtCode := scanOutFileExtCode(outFile, strBegin, strEnd)
+		scanExtCode := ScanOutFileExtCode(outFile, strBegin, strEnd)
 		os.Remove(outFile)
 		fs, err := os.OpenFile(outFile, os.O_RDWR|os.O_CREATE, 0755)
 		defer fs.Close()
@@ -256,31 +256,6 @@ func createSetGet(data TableMsgProto) string {
 		}
 	}
 	return result
-}
-
-func scanOutFileExtCode(file string, begin string, end string) string {
-	fs, err := os.OpenFile(file, os.O_RDWR, 0755)
-	if err != nil {
-		fmt.Println("scanOutFileExtCode error :", err, "name:", file)
-		return ""
-	}
-	defer fs.Close()
-	scanner := bufio.NewScanner(fs)
-	scanStr := ""
-	beginFlag, endFlag := false, false
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.Contains(line, begin) {
-			beginFlag = true
-		} else if strings.Contains(line, end) {
-			endFlag = true
-
-		} else if beginFlag && !endFlag {
-			fmt.Println(line)
-			scanStr += "\r\n" + line
-		}
-	}
-	return scanStr
 }
 
 func loadTableProtoFiles(pbDir string) {

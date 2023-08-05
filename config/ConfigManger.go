@@ -1,0 +1,23 @@
+package config
+
+import "fmt"
+
+func InitConfigManger(path string) {
+
+	if !LoadActivityNpcGroupConfig(path) {
+		panic(fmt.Sprintf("LoadActivityNpcGroupConfig(path) error"))
+	}
+
+	if !LoadActivityNpcConfig(path) {
+		panic(fmt.Sprintf("LoadActivityNpcConfig(path) error"))
+	}
+
+	if !LoadActivityInfoConfig(path) {
+		panic(fmt.Sprintf("LoadActivityInfoConfig(path) error"))
+	}
+
+	if !LoadActivitypassawardConfig(path) {
+		panic(fmt.Sprintf("LoadActivitypassawardConfig(path) error"))
+	}
+
+}

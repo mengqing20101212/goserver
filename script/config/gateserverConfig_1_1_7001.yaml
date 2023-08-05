@@ -1,0 +1,24 @@
+serverId: 2                 #服务器id
+name: gateserver                   #服务器名称
+zoneId: 1               #战区ID
+partId: 1               #小区ID
+type:   2           #类型
+port: 7001                   #监听端口
+groupId: 1             #组id
+groupName: 1区         #服务器组名称
+inputSize: 6020         #socket连接上行数据buffer大小
+outPutSize: 6020       #socket连接下行数据buffer大小
+maxConnectNum: 1000 #最大连接数
+
+mysql:
+ ip: 127.0.0.1                 #数据库IP
+ port: 3306             #数据库端口
+ username: root     #数据库用户名
+ password: root     #数据库密码
+ dbname: sysweb         #数据库
+
+redis:
+ ip: 127.0.0.1                 #redis IP
+ port: 6379             #redis 端口
+ username: 
+ password: 
