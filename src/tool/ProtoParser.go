@@ -89,7 +89,7 @@ func createGoHandlerFile() {
 		fmt.Println("mapTemplate Execute error :", err)
 	}
 	fmt.Println(buf.String())
-	outFile := "../common/server/HandlerFactory.go"
+	outFile := "../common/src/HandlerFactory.go"
 	outFile = filepath.Join(pbDir, outFile)
 	os.Remove(outFile)
 	fs, err := os.OpenFile(outFile, os.O_RDWR|os.O_CREATE, 0755)

@@ -55,7 +55,7 @@ func main() {
 	for _, data := range configMap {
 
 		fmt.Println(fmt.Sprintf("data ptr:%p", &data))
-		if data.FileBaseName == "server" {
+		if data.FileBaseName == "src" {
 			go createServerConfig(data, &wg)
 		} else {
 			go createConfig(data, &wg)

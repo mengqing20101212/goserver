@@ -150,7 +150,7 @@ func GetActivityInfoConfigPtr() *ActivityInfoConfigPtr {
 	}
 }
 
-//*****begin****//
+// *****begin****//
 func (self *ActivityInfoConfigSwitch) afterLoad(config *ActivityInfoConfigPtr) {
 }
 
