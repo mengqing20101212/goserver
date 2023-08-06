@@ -34,7 +34,7 @@ const (
 	enum = iota
 )
 
-func main1() {
+func main2() {
 	fmt.Println("start parse proto buffer")
 	loadProtoFiles(pbDir)
 	fmt.Println(fileProtoMap)
@@ -89,7 +89,7 @@ func createGoHandlerFile() {
 		fmt.Println("mapTemplate Execute error :", err)
 	}
 	fmt.Println(buf.String())
-	outFile := "../common/src/HandlerFactory.go"
+	outFile := "../src/common/server/HandlerFactory.go"
 	outFile = filepath.Join(pbDir, outFile)
 	os.Remove(outFile)
 	fs, err := os.OpenFile(outFile, os.O_RDWR|os.O_CREATE, 0755)

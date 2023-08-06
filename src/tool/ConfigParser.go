@@ -16,7 +16,7 @@ import (
 var excelDir = "G:\\WORK\\me\\goserver\\excel"
 var configMap = make(map[string]ExcelData)
 
-func main() {
+func main1() {
 	if len(os.Args) > 1 {
 		excelDir = os.Args[1]
 	}
@@ -70,9 +70,9 @@ func main() {
 }
 
 func createConfigManger(list []string) {
-	outFile := filepath.Join(excelDir, "../config", "ConfigManger.go")
+	outFile := filepath.Join(excelDir, "../src/config", "ConfigManger.go")
 	relativePath := "ConfigManger.tmpl"
-	absPath := filepath.Join(excelDir, "../tool", relativePath)
+	absPath := filepath.Join(excelDir, "../src/tool", relativePath)
 	tmpl, err := template.New("ConfigManger.tmpl").ParseFiles(absPath)
 	if err != nil {
 		panic(fmt.Sprintf("Error parsing template:%s", err))
@@ -97,7 +97,7 @@ func createConfig(e ExcelData, s *sync.WaitGroup) {
 	createJsonFile(e)
 
 	relativePath := "Config.tmpl"
-	absPath := filepath.Join(excelDir, "../tool", relativePath)
+	absPath := filepath.Join(excelDir, "../src/tool", relativePath)
 	tmpl, err := template.New("Config.tmpl").Funcs(template.FuncMap{
 		"TrimSuffix": strings.TrimSuffix,
 		"makeJson":   makeJson,
@@ -115,7 +115,7 @@ func createConfig(e ExcelData, s *sync.WaitGroup) {
 	if err != nil {
 		fmt.Println("mapTemplate Execute error :", err)
 	}
-	outFile := filepath.Join(excelDir, "../config", e.FileBaseName+"Config.go")
+	outFile := filepath.Join(excelDir, "../src/config", e.FileBaseName+"Config.go")
 	strBegin := "//*****begin****//"
 	strEnd := "//*****end****//"
 	scanExtCode := ScanOutFileExtCode(outFile, strBegin, strEnd)
@@ -281,7 +281,7 @@ func createServerConfig(e ExcelData, s *sync.WaitGroup) {
 		fileName := fmt.Sprintf("%sConfig_%s_%s_%s.yaml", config.Name, config.ZoneId, config.PartId, config.Port)
 		relativePath := "serverConfigYaml.tmpl"
 
-		absPath := filepath.Join(excelDir, "../tool", relativePath)
+		absPath := filepath.Join(excelDir, "../src/tool", relativePath)
 		tmpl, err := template.New("serverConfigYaml.tmpl").ParseFiles(absPath)
 		if err != nil {
 			fmt.Println("Error parsing template:", err)

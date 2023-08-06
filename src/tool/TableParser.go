@@ -32,7 +32,7 @@ type TableMsgProto struct {
 	FileName  string
 }
 
-func main2() {
+func main() {
 	fmt.Println("start parse table buffer")
 	args := os.Args
 	if len(args) > 1 {
@@ -98,9 +98,7 @@ func getDBType(filedType string) string {
 
 func createGoTableFile() {
 
-	// Relative path to the template file
 	relativePath := "Table.tmpl"
-	// Resolve the absolute path using filepath.Join
 	absPath := filepath.Join(TablePbDir, "../", relativePath)
 	tmpl, err := template.New("Table.tmpl").Funcs(template.FuncMap{
 		"TrimSuffix":     strings.TrimSuffix,
@@ -125,7 +123,7 @@ func createGoTableFile() {
 		if err != nil {
 			fmt.Println("mapTemplate Execute error :", err)
 		}
-		outFile := "../../table"
+		outFile := "../../src/table"
 		outFile = filepath.Join(TablePbDir, outFile, fileName+"Table.go")
 		strBegin := "//*****begin****//"
 		strEnd := "//*****end****//"

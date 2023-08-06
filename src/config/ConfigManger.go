@@ -4,8 +4,8 @@ import "fmt"
 
 func InitConfigManger(path string) {
 
-	if !LoadActivityNpcGroupConfig(path) {
-		panic(fmt.Sprintf("LoadActivityNpcGroupConfig(path) error"))
+	if !LoadServerConfig(path) {
+		panic(fmt.Sprintf("LoadServerConfig(path) error"))
 	}
 
 	if !LoadActivityNpcConfig(path) {
@@ -18,6 +18,10 @@ func InitConfigManger(path string) {
 
 	if !LoadActivitypassawardConfig(path) {
 		panic(fmt.Sprintf("LoadActivitypassawardConfig(path) error"))
+	}
+
+	if !LoadActivityNpcGroupConfig(path) {
+		panic(fmt.Sprintf("LoadActivityNpcGroupConfig(path) error"))
 	}
 
 }

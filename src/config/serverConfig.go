@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"goserver/common/logger"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"sync"
 )
@@ -33,6 +33,9 @@ type ServerConfig struct {
 	Zoneid        int32  `json:"Zoneid"`        //战区id
 	Partid        int32  `json:"Partid"`        //小区id
 
+	//********filed begin********//
+
+	//********filed end********//
 }
 
 type ServerConfigPtr struct {
@@ -74,7 +77,7 @@ var serverConfigSwitch = ServerConfigSwitch{}
 func LoadServerConfig(fileUrl string) bool {
 	serverConfigSwitch.lock.Lock()
 	defer serverConfigSwitch.lock.Unlock()
-	fs, err := os.OpenFile(path.Join(fileUrl, "ServerConfig+.txt"), os.O_RDWR, 0755)
+	fs, err := os.OpenFile(filepath.Join(fileUrl, "server.txt"), os.O_RDWR, 0755)
 	if err != nil {
 		logger.Error(fmt.Sprintf("load fileUrl:%s error:%s", fileUrl, err))
 		return false
@@ -114,7 +117,7 @@ func LoadServerConfig(fileUrl string) bool {
 		serverConfigSwitch.afterLoad(&serverConfigSwitch.config1)
 	}
 	serverConfigSwitch.isSwitch = !serverConfigSwitch.isSwitch
-
+	logger.Info(fmt.Sprintf("load file:%s, success", fs.Name()))
 	return true
 }
 
