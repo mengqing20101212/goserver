@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"math"
 	"sync"
 	"time"
 	"unsafe"
@@ -48,6 +49,36 @@ func (ringBuf *RingBuffer) ReadByteWhiteTimeOut(timeout int) byte {
 	return val
 }
 
+func (ringBuf *RingBuffer) WriteBoolean(b bool) bool {
+	ringBuf.checkCanWrite(1, time.Duration(-1))
+	var val uint64
+	if b {
+		val = 1
+	}
+	ringBuf.writeVal(val, 1)
+	return true
+}
+func (ringBuf *RingBuffer) WriteBooleanWhiteTimeOut(b bool, timeout int) bool {
+	ringBuf.checkCanWrite(1, time.Duration(timeout))
+	var val uint64
+	if b {
+		val = 1
+	}
+	ringBuf.writeVal(val, 1)
+	return true
+}
+func (ringBuf *RingBuffer) ReadBoolean() bool {
+	ringBuf.checkCanRead(1, time.Duration(-1))
+	val := readVal[byte](ringBuf, 1)
+	return val == 1
+}
+
+func (ringBuf *RingBuffer) ReadBooleanWhiteTimeOut(timeout int) bool {
+	ringBuf.checkCanRead(1, time.Duration(timeout))
+	val := readVal[byte](ringBuf, 1)
+	return val == 1
+}
+
 func (ringBuf *RingBuffer) WriteUint16(val uint16) bool {
 	ringBuf.checkCanWrite(2, time.Duration(-1))
 	ringBuf.writeVal(uint64(val), 2)
@@ -71,9 +102,170 @@ func (ringBuf *RingBuffer) ReadUint16WhiteTimeOut(timeout int) uint16 {
 	return val
 }
 
+func (ringBuf *RingBuffer) WriteInt16(val int16) bool {
+	ringBuf.checkCanWrite(2, time.Duration(-1))
+	ringBuf.writeVal(uint64(val), 2)
+	return true
+}
+
+func (ringBuf *RingBuffer) ReadInt16() int16 {
+	ringBuf.checkCanRead(2, time.Duration(-1))
+	val := readVal[int16](ringBuf, 2)
+	return val
+}
+
+func (ringBuf *RingBuffer) WriteInt16WhiteTimeOut(val int16, timeout int) bool {
+
+	ringBuf.writeVal(uint64(val), 2)
+	return true
+}
+func (ringBuf *RingBuffer) ReadInt16WhiteTimeOut(timeout int) uint16 {
+	ringBuf.checkCanRead(2, time.Duration(timeout))
+	val := readVal[uint16](ringBuf, 2)
+	return val
+}
+
+func (ringBuf *RingBuffer) WriteUint32(val uint32) bool {
+	ringBuf.checkCanWrite(4, time.Duration(-1))
+	ringBuf.writeVal(uint64(val), 4)
+	return true
+}
+
+func (ringBuf *RingBuffer) ReadUint32() uint32 {
+	ringBuf.checkCanRead(4, time.Duration(-1))
+	val := readVal[uint32](ringBuf, 4)
+	return val
+}
+
+func (ringBuf *RingBuffer) WriteUint32WhiteTimeOut(val uint32, timeout int) bool {
+	ringBuf.checkCanWrite(4, time.Duration(timeout))
+	ringBuf.writeVal(uint64(val), 4)
+	return true
+}
+func (ringBuf *RingBuffer) ReadUint32WhiteTimeOut(timeout int) uint32 {
+	ringBuf.checkCanRead(4, time.Duration(timeout))
+	val := readVal[uint32](ringBuf, 4)
+	return val
+}
+
+func (ringBuf *RingBuffer) WriteInt32(val int32) bool {
+	ringBuf.checkCanWrite(4, time.Duration(-1))
+	ringBuf.writeVal(uint64(val), 4)
+	return true
+}
+
+func (ringBuf *RingBuffer) ReadInt32() int32 {
+	ringBuf.checkCanRead(4, time.Duration(-1))
+	val := readVal[int32](ringBuf, 4)
+	return val
+}
+
+func (ringBuf *RingBuffer) WriteInt32WhiteTimeOut(val int32, timeout int) bool {
+	ringBuf.checkCanWrite(4, time.Duration(timeout))
+	ringBuf.writeVal(uint64(val), 4)
+	return true
+}
+func (ringBuf *RingBuffer) ReadInt32WhiteTimeOut(timeout int) int32 {
+	ringBuf.checkCanRead(2, time.Duration(timeout))
+	val := readVal[int32](ringBuf, 2)
+	return val
+}
+
+func (ringBuf *RingBuffer) WriteUint64(val uint64) bool {
+	ringBuf.checkCanWrite(8, time.Duration(-1))
+	ringBuf.writeVal(val, 8)
+	return true
+}
+
+func (ringBuf *RingBuffer) ReadUint64() uint64 {
+	ringBuf.checkCanRead(8, time.Duration(-1))
+	val := readVal[uint64](ringBuf, 8)
+	return val
+}
+
+func (ringBuf *RingBuffer) WriteUint64WhiteTimeOut(val uint64, timeout int) bool {
+	ringBuf.checkCanWrite(8, time.Duration(timeout))
+	ringBuf.writeVal(val, 8)
+	return true
+}
+func (ringBuf *RingBuffer) ReadUint64WhiteTimeOut(timeout int) uint64 {
+	ringBuf.checkCanRead(8, time.Duration(timeout))
+	val := readVal[uint64](ringBuf, 8)
+	return val
+}
+
+func (ringBuf *RingBuffer) WriteInt64(val int64) bool {
+	ringBuf.checkCanWrite(8, time.Duration(-1))
+	ringBuf.writeVal(uint64(val), 8)
+	return true
+}
+
+func (ringBuf *RingBuffer) ReadInt64() int64 {
+	ringBuf.checkCanRead(8, time.Duration(-1))
+	val := readVal[int64](ringBuf, 8)
+	return val
+}
+
+func (ringBuf *RingBuffer) WriteInt64WhiteTimeOut(val int64, timeout int) bool {
+	ringBuf.checkCanWrite(8, time.Duration(timeout))
+	ringBuf.writeVal(uint64(val), 8)
+	return true
+}
+func (ringBuf *RingBuffer) ReadInt64WhiteTimeOut(timeout int) int64 {
+	ringBuf.checkCanRead(8, time.Duration(timeout))
+	val := readVal[int64](ringBuf, 8)
+	return val
+}
+
+func (ringBuf *RingBuffer) WriteFloat32(val float32) bool {
+	ringBuf.checkCanWrite(4, time.Duration(-1))
+	ringBuf.writeValFloat32(val, 4)
+	return true
+}
+
+func (ringBuf *RingBuffer) ReadFloat32() float32 {
+	ringBuf.checkCanRead(4, time.Duration(-1))
+	val := readValFloat32(ringBuf, 4)
+	return val
+}
+
+func (ringBuf *RingBuffer) WriteFloat32WhiteTimeOut(val float32, timeout int) bool {
+	ringBuf.checkCanWrite(4, time.Duration(timeout))
+	ringBuf.writeValFloat32(val, 4)
+	return true
+}
+func (ringBuf *RingBuffer) ReadFloat32WhiteTimeOut(timeout int) float32 {
+	ringBuf.checkCanRead(4, time.Duration(timeout))
+	val := readValFloat32(ringBuf, 4)
+	return val
+}
+
+func (ringBuf *RingBuffer) WriteFloat64(val float64) bool {
+	ringBuf.checkCanWrite(8, time.Duration(-1))
+	ringBuf.writeValFloat64(val, 8)
+	return true
+}
+
+func (ringBuf *RingBuffer) ReadFloat64() float64 {
+	ringBuf.checkCanRead(8, time.Duration(-1))
+	val := readValFloat64(ringBuf, 8)
+	return val
+}
+
+func (ringBuf *RingBuffer) WriteFloat64WhiteTimeOut(val float64, timeout int) bool {
+	ringBuf.checkCanWrite(8, time.Duration(timeout))
+	ringBuf.writeValFloat64(val, 8)
+	return true
+}
+func (ringBuf *RingBuffer) ReadFloat64WhiteTimeOut(timeout int) float64 {
+	ringBuf.checkCanRead(8, time.Duration(timeout))
+	val := readValFloat64(ringBuf, 8)
+	return val
+}
+
 func (ringBuf *RingBuffer) writeVal(val uint64, len int) {
-	bs := make([]byte, 4)
-	for i := 0; i < 4; i++ {
+	bs := make([]byte, 8)
+	for i := 0; i < 8; i++ {
 		b := byte(val & 0xff)
 		bs[i] = b
 		val >>= 8
@@ -91,6 +283,16 @@ func (ringBuf *RingBuffer) writeVal(val uint64, len int) {
 		}
 	}
 	ringBuf.writePos = pos
+}
+
+func (ringBuf *RingBuffer) writeValFloat32(valFloat float32, len int) {
+	val := math.Float32bits(valFloat)
+	ringBuf.writeVal(uint64(val), len)
+}
+
+func (ringBuf *RingBuffer) writeValFloat64(valFloat float64, len int) {
+	val := math.Float64bits(valFloat)
+	ringBuf.writeVal(val, len)
 }
 
 func (ringBuf *RingBuffer) Rest() {
@@ -114,12 +316,76 @@ func (ringBuf *RingBuffer) checkCanWrite(writeLen int, timeout time.Duration) {
 	}
 }
 
+func (ringBuf *RingBuffer) WriteBytes(bs []byte) bool {
+	len := len(bs)
+	ringBuf.checkCanWrite(len+2, time.Duration(-1))
+	ringBuf.writeVal(uint64(len), 2)
+	if ringBuf.writePos > ringBuf.readPos {
+		if ringBuf.capacity-ringBuf.writePos >= len {
+			copy(ringBuf.data[ringBuf.writePos:], bs)
+			ringBuf.writePos += len
+		} else {
+			splitLen := ringBuf.capacity - ringBuf.writePos
+			copy(ringBuf.data[ringBuf.writePos:], bs[:splitLen])
+			copy(ringBuf.data[0:], bs[splitLen:])
+			ringBuf.writePos = len - splitLen
+		}
+	} else {
+		copy(ringBuf.data[ringBuf.writePos:], bs)
+		ringBuf.writePos += len
+	}
+	return true
+}
+
+func (ringBuf *RingBuffer) ReadBytes() []byte {
+	ringBuf.checkCanRead(2, -1)
+	defer func() {
+		if r := recover(); r != nil {
+			ringBuf.RestMask()
+		}
+	}()
+	ringBuf.MakeMask()
+	len := int(ringBuf.ReadUint16())
+	if len == 0 {
+		return nil
+	}
+	ringBuf.checkCanRead(int(len), -1)
+	bs := make([]byte, len)
+	if ringBuf.writePos > ringBuf.readPos {
+		copy(bs, ringBuf.data[ringBuf.readPos:])
+		ringBuf.readPos += len
+	} else {
+		limitLen := ringBuf.capacity - ringBuf.readPos
+		if limitLen >= len {
+			copy(bs, ringBuf.data[ringBuf.readPos:])
+			ringBuf.readPos += len
+		} else {
+			copy(bs, ringBuf.data[ringBuf.readPos:])
+			copy(bs[limitLen:], ringBuf.data[:len-limitLen])
+			ringBuf.readPos = len - limitLen
+		}
+	}
+	return bs
+
+}
+
+func (ringBuf *RingBuffer) WriteString(str string) bool {
+	return ringBuf.WriteBytes([]byte(str))
+}
+func (ringBuf *RingBuffer) ReadString() string {
+	bs := ringBuf.ReadBytes()
+	return string(bs)
+}
+
 func (ringBuf *RingBuffer) MakeMask() {
 	ringBuf.makePos = ringBuf.readPos
 }
 func (ringBuf *RingBuffer) RestMask() {
-	ringBuf.readPos = ringBuf.makePos
-	ringBuf.makePos = -1
+	if ringBuf.makePos > -1 {
+		ringBuf.readPos = ringBuf.makePos
+		ringBuf.makePos = -1
+	}
+
 }
 
 func (ringBuf *RingBuffer) toString() string {
@@ -174,7 +440,7 @@ func (ringBuf *RingBuffer) readPosAutoincrement(pos int) int {
 
 func readVal[T byte | uint16 | int16 | int32 | int | uint32 | int64 | uint64 | float32 | float64](ringBuf *RingBuffer, len int) T {
 	var res uint64
-	bs := make([]byte, 4)
+	bs := make([]byte, 8)
 	pos := ringBuf.readPos
 	readPos := pos
 	if ringBuf.model == WriteTypeBig {
@@ -208,9 +474,36 @@ func readVal[T byte | uint16 | int16 | int32 | int | uint32 | int64 | uint64 | f
 		res <<= 8
 		res |= uint64(bs[3])
 	}
+	if typeLen >= 5 {
+		res <<= 8
+		res |= uint64(bs[4])
+	}
+	if typeLen >= 6 {
+		res <<= 8
+		res |= uint64(bs[5])
+	}
+	if typeLen >= 7 {
+		res <<= 8
+		res |= uint64(bs[6])
+	}
+	if typeLen >= 8 {
+		res <<= 8
+		res |= uint64(bs[7])
+	}
+
 	result = T(res)
 	ringBuf.readPos = readPos + 1
 	return result
+}
+
+func readValFloat32(ringBuf *RingBuffer, len int) float32 {
+	res := readVal[uint32](ringBuf, len)
+	return math.Float32frombits(res)
+}
+
+func readValFloat64(ringBuf *RingBuffer, len int) float64 {
+	res := readVal[uint64](ringBuf, len)
+	return math.Float64frombits(res)
 }
 
 func NewRingBuffer(capacity int, model byte) *RingBuffer {

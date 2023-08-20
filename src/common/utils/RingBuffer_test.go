@@ -60,7 +60,9 @@ func TestNewRingBuffer(t *testing.T) {
 				}
 			}()
 
-			go func() {
+			testFloat(got)
+			testString(got)
+			/*go func() {
 				for i := 0; i < 1000; i++ {
 					got.WriteUint16WhiteTimeOut(uint16(i), 100)
 				}
@@ -71,7 +73,7 @@ func TestNewRingBuffer(t *testing.T) {
 					fmt.Println("read data:", got.ReadUint16WhiteTimeOut(4000))
 				}
 
-			}()
+			}()*/
 			/*for i := 0; i < 1000; i++ {
 				got.WriteUint16(uint16(i))
 				fmt.Println("read data:", got.ReadUint16())
@@ -87,6 +89,24 @@ func TestNewRingBuffer(t *testing.T) {
 			}*/
 		})
 	}
+}
+
+func testString(buffer *RingBuffer) {
+	buffer.WriteString("12312, dadwa === !! 我不是中国人  \r\n \\m")
+	fmt.Println(buffer.ReadString())
+}
+
+func testFloat(buffer *RingBuffer) {
+	buffer.WriteFloat32(13.211)
+	fmt.Println(buffer.ReadFloat32())
+	buffer.WriteFloat64(12.111)
+	fmt.Println(buffer.ReadFloat64())
+	buffer.WriteInt16(-12)
+	fmt.Println(buffer.ReadInt16())
+	buffer.WriteUint64(20)
+	fmt.Println(buffer.ReadUint64())
+	buffer.WriteInt64(-21)
+	fmt.Println(buffer.ReadInt64())
 }
 
 func TestRingBuffer_MakeMask(t *testing.T) {
