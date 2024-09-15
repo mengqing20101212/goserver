@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"sync"
 	"time"
 	"unsafe"
 )
@@ -18,12 +17,11 @@ const (
 RingBuffer 是一个环形队列，数据满了抛异常, 支持单生产者 单消费者使用
 */
 type RingBuffer struct {
-	data     []byte       //数据数组
-	readPos  int          //读指针
-	writePos int          //写指针
-	makePos  int          //标识
-	capacity int          //最大容量
-	lock     sync.RWMutex //读写锁
+	data     []byte //数据数组
+	readPos  int    //读指针
+	writePos int    //写指针
+	makePos  int    //标识
+	capacity int    //最大容量
 	model    byte
 }
 
@@ -296,8 +294,6 @@ func (ringBuf *RingBuffer) writeValFloat64(valFloat float64, len int) {
 }
 
 func (ringBuf *RingBuffer) Rest() {
-	ringBuf.lock.Lock()
-	defer ringBuf.lock.Unlock()
 	ringBuf.readPos = 0
 	ringBuf.writePos = 0
 	ringBuf.makePos = -1
@@ -393,8 +389,6 @@ func (ringBuf *RingBuffer) toString() string {
 }
 
 func (ringBuf *RingBuffer) canWriteLen() int {
-	ringBuf.lock.Lock()
-	defer ringBuf.lock.Unlock()
 	if ringBuf.writePos >= ringBuf.readPos {
 		return ringBuf.capacity - ringBuf.writePos + ringBuf.readPos
 	}
@@ -402,8 +396,6 @@ func (ringBuf *RingBuffer) canWriteLen() int {
 }
 
 func (ringBuf *RingBuffer) canReadLen() int {
-	ringBuf.lock.RLock()
-	defer ringBuf.lock.RUnlock()
 	if ringBuf.writePos >= ringBuf.readPos {
 		return ringBuf.writePos - ringBuf.readPos
 	}
