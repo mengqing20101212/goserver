@@ -27,6 +27,7 @@ const (
 // 默认1G切割一个文件
 const defaultSpiltLogSize = 1024 * 1024 * 1024
 
+//测试
 /*
 日志文件的配置信息
 */
