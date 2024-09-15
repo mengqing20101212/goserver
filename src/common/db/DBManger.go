@@ -14,6 +14,8 @@ type DBManger struct {
 	connectFlag bool
 }
 
+var log = logger.Init("../logs", "db.log")
+
 func (self *DBManger) IsConnectFlag() bool {
 	return self.connectFlag
 }
@@ -22,20 +24,20 @@ func (self *DBManger) Execute(sql string, params any) bool {
 	_, err := self.db.Exec(sql, params)
 	if err != nil {
 		self.connectFlag = false
-		logger.Error(fmt.Sprintf("Execute sql error:%s, sql:%s, params:%s", err, sql, params))
+		log.Error(fmt.Sprintf("Execute sql error:%s, sql:%s, params:%s", err, sql, params))
 		return false
 	}
-	logger.Info(fmt.Sprintf("sql:%s, params:%s", sql, params))
+	log.Info(fmt.Sprintf("sql:%s, params:%s", sql, params))
 	return true
 }
 func (self *DBManger) ExecuteSql(sql string) bool {
 	_, err := self.db.Exec(sql)
 	if err != nil {
 		self.connectFlag = false
-		logger.Error(fmt.Sprintf("Execute sql error:%s, sql:%s", err, sql))
+		log.Error(fmt.Sprintf("Execute sql error:%s, sql:%s", err, sql))
 		return false
 	}
-	logger.Info(fmt.Sprintf("sql:%s", sql))
+	log.Info(fmt.Sprintf("sql:%s", sql))
 	return true
 }
 func (self *DBManger) Query(sqlStr string, params any, sqlOpt TableInterface) (bool, any) {
@@ -47,7 +49,7 @@ func (self *DBManger) Query(sqlStr string, params any, sqlOpt TableInterface) (b
 		rows, err = self.db.Query(sqlStr, params)
 	}
 	if err != nil {
-		logger.Error(fmt.Sprintf("Query data error sqlStr:%s, params:%s, error:%s", sqlStr, params, err))
+		log.Error(fmt.Sprintf("Query data error sqlStr:%s, params:%s, error:%s", sqlStr, params, err))
 		return false, nil
 	}
 	defer rows.Close()
@@ -82,13 +84,13 @@ func InitDataBase(manger *DBManger, userName, passWord, ip, databases string, po
 	err = database.Ping()
 	if err != nil {
 		database.Close()
-		logger.Error(fmt.Sprintf(" InitDataBase Ping databases error err :%s, userName:%s, passWord:%s, ip:%s, databases:%s, port:%d, dbUrl:%s", err, userName, passWord, ip, database, port, dbUrl))
+		log.Error(fmt.Sprintf(" InitDataBase Ping databases error err :%s, userName:%s, passWord:%s, ip:%s, databases:%s, port:%d, dbUrl:%s", err, userName, passWord, ip, database, port, dbUrl))
 		return false
 	}
 	manger.dbUrl = dbUrl
 	manger.db = database
 	manger.connectFlag = true
-	logger.Info(fmt.Sprintf("InitDataBase success dbUrl:%s", dbUrl))
+	log.Info(fmt.Sprintf("InitDataBase success dbUrl:%s", dbUrl))
 	return true
 }
 

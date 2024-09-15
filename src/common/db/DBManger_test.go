@@ -1,7 +1,6 @@
 package db
 
 import (
-	"goserver/common/logger"
 	"testing"
 )
 
@@ -30,7 +29,6 @@ func TestInitDefaultDataBase(t *testing.T) {
 			want: true,
 		},
 	}
-	logger.Init("../logs", "test2.log")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := InitDefaultDataBase(tt.args.userName, tt.args.passWord, tt.args.ip, tt.args.databases, tt.args.port); got != tt.want {
