@@ -2,9 +2,9 @@ package server
 
 import (
 	"bytes"
+	"common/utils"
 	"fmt"
-	"goserver/common/logger"
-	"goserver/common/utils"
+	"logger"
 	"net"
 	"os"
 )
@@ -22,6 +22,8 @@ type Server struct {
 	connectNum    int32
 }
 
+var log = logger.SystemLogger
+
 func NewServer(port int) (server *Server) {
 	server = &Server{
 		port:          port,
@@ -34,7 +36,7 @@ func NewServer(port int) (server *Server) {
 }
 
 func (self *Server) Start() {
-	logger.Info("[Server] start begin")
+	log.Info("[Server] start begin")
 	self.filterChain.AddFilter(&Filter{})
 	self.filterChain.AddFilter(&IpFilter{})
 	self.codecsProto = &PackageFactory{}
@@ -42,15 +44,15 @@ func (self *Server) Start() {
 	DefaultInitHandler()
 	lis, err := net.ListenTCP("tcp", &ipaddr)
 	if err != nil {
-		logger.Error(fmt.Sprintf("[Server] start ListenTCP error:%s", err))
+		log.Error(fmt.Sprintf("[Server] start ListenTCP error:%s", err))
 		os.Exit(10)
 	}
 	self.listener = lis
-	logger.Info(fmt.Sprintf("[Server] start end listener port:%d", self.port))
+	log.Info(fmt.Sprintf("[Server] start end listener port:%d", self.port))
 	for {
 		con, err := self.listener.Accept()
 		if err != nil {
-			logger.Error(fmt.Sprintf("[Server] Accept error: %s", err))
+			log.Error(fmt.Sprintf("[Server] Accept error: %s", err))
 			continue
 		}
 		go self.OnAccept(con, self.connectNum)
@@ -62,7 +64,7 @@ func (self *Server) OnAccept(con net.Conn, cid int32) {
 	tcpConn, ok := con.(*net.TCPConn)
 	if !ok {
 		// 处理类型转换失败的情况
-		logger.Error(fmt.Sprintf("OnAccept conn tcpConn, ok := con.(*net.TCPConn) error"))
+		log.Error(fmt.Sprintf("OnAccept conn tcpConn, ok := con.(*net.TCPConn) error"))
 		return
 	}
 	addr := tcpConn.RemoteAddr()
@@ -95,7 +97,7 @@ func (self *SocketChannel) SendMsg(data []byte) {
 			self.Close(fmt.Sprintf("write msg to remote error:%s", err))
 		}
 	} else {
-		logger.Error(fmt.Sprintf("socket is close endPoint:%s", self.endPoint))
+		log.Error(fmt.Sprintf("socket is close endPoint:%s", self.endPoint))
 	}
 }
 
@@ -104,7 +106,7 @@ func (self SocketChannel) IsConnect() bool {
 }
 
 func (e *SocketChannel) Close(s string) {
-	logger.Info(s)
+	log.Info(s)
 	e.con.Close()
 	e.cid = -1
 }

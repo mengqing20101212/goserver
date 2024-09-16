@@ -2,12 +2,10 @@ package utils
 
 import (
 	"fmt"
-	"goserver/common/logger"
 	"testing"
 )
 
 func TestByteBuffer(t *testing.T) {
-	logger.Init("/logs", "test.log")
 	buf := NewByteBuffer()
 	buf.WriteByte(1)
 	buf.WriteInt32(12321)

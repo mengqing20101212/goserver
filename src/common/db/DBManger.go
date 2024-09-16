@@ -5,7 +5,7 @@ import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	"goserver/common/logger"
+	"logger"
 )
 
 type DBManger struct {
@@ -14,7 +14,7 @@ type DBManger struct {
 	connectFlag bool
 }
 
-var log = logger.Init("../logs", "db.log")
+var log = logger.InitNull()
 
 func (self *DBManger) IsConnectFlag() bool {
 	return self.connectFlag

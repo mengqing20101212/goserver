@@ -8,7 +8,10 @@ import (
 var log logger.Logger
 
 func main() {
+	testLogger()
+}
 
+func testLogger() {
 	for i := 0; i < 10; i++ {
 		go func() {
 			log := logger.InitNull()
@@ -19,5 +22,4 @@ func main() {
 		}()
 	}
 	time.Sleep(10 * time.Second)
-
 }
