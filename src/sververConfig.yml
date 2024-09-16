@@ -1,0 +1,16 @@
+serverId: ly_1000
+serverPort: 12001
+serverType: game
+db:
+  host: 139.224.80.204
+  port: 3306
+  userName: root
+  passWord: ly.1006897725
+  dbName: goServer
+redis:
+  host: 139.224.80.204
+  port: 6379
+  password: ly.1006897725
+
+
+

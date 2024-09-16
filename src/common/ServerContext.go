@@ -1,6 +1,11 @@
 package common
 
-import "server"
+import (
+	"common/utils"
+	"gopkg.in/yaml.v3"
+	"logger"
+	"server"
+)
 
 type ServerType int
 
@@ -30,29 +35,53 @@ func (s ServerType) String() string {
 
 type ServerConfig struct {
 	LogDir string
-	//数据库相关
-	DbIp       string
-	DbPort     int
-	DbUser     string
-	DbPassword string
-	DbName     string
-	//redis相关
-	RedisIp       string
-	RedisPort     int
-	RedisUser     string
-	RedisPassword string
+
+	DbConfig    DbConfig    `yaml:"db"`
+	RedisConfig RedisConfig `yaml:"redis"`
 
 	//server 相关
-	ServerPort int
+	ServerPort int `yaml:"serverPort"`
 	ServerType ServerType
 	ServerId   string
 	//TODO http相关
 
 }
 
+type RedisConfig struct {
+	RedisIp       string `yaml:"host"`
+	RedisPort     int    `yaml:"port"`
+	RedisPassword string `yaml:"password"`
+}
+
+type DbConfig struct {
+	//数据库相关
+	DbIp       string `yaml:"host"`
+	DbPort     int    `yaml:"port"`
+	DbUser     string `yaml:"userName"`
+	DbPassword string `yaml:"passWord"`
+	DbName     string `yaml:"dbName"`
+}
+
 type ServerContext struct {
-	Config *ServerConfig
+	Config ServerConfig
 	Server *server.Server
 }
 
+func ParserConfig(cfg string) {
+	err := yaml.Unmarshal([]byte(cfg), &Context.Config)
+	if err != nil {
+		panic("parser config error " + err.Error())
+		return
+	}
+	log.Info(cfg)
+}
+
 var Context = new(ServerContext)
+var log *logger.Logger
+
+func InitContext(logDir, serverId string, serverType ServerType) {
+	Context.Config.LogDir = logDir
+	logger.InitType(logDir)
+	log = logger.SystemLogger
+	utils.InitNacos(serverId, serverType.String(), ParserConfig)
+}

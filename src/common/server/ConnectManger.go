@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"goserver/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"sync"
 )
 

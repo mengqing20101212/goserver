@@ -1,9 +1,19 @@
 package logger
 
-import "common"
+var logDir string
 
-var logDir = common.Context.Config.LogDir
-var SystemLogger = Init(logDir, "system")
-var NetLogger = Init(logDir, "net")
-var DbLogger = Init(logDir, "db")
-var RpcLogger = Init(logDir, "rpc")
+var SystemLogger *Logger
+
+var NetLogger *Logger
+
+var DbLogger *Logger
+
+var RpcLogger *Logger
+
+func InitType(dir string) {
+	logDir = dir
+	SystemLogger = Init(logDir, "system")
+	NetLogger = Init(logDir, "net")
+	DbLogger = Init(logDir, "db")
+	RpcLogger = Init(logDir, "rpc")
+}

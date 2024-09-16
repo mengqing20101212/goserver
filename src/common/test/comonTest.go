@@ -1,29 +1,26 @@
 package main
 
 import (
+	"common"
+	"common/utils"
 	"encoding/base64"
-	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"logger"
 	"time"
 )
 
 func main() {
 	//testLogger()
-	mySigningKey := []byte("ly.1006897725")
-	token := jwt.New(jwt.SigningMethodHS256)
-	claims := token.Claims.(jwt.MapClaims)
+	testConfig()
+	//testNacos()
 
-	claims["username"] = "nacos"
-	claims["password"] = "nacos"
+}
 
-	tokenString, err := token.SignedString(mySigningKey)
-	if err != nil {
-		fmt.Println("Error while signing the token:", err)
-		return
-	}
+func testConfig() {
+	common.InitContext("../../logs", "game1001", common.Game)
+}
 
-	fmt.Println("Generated JWT token:", base64Str(tokenString))
+func testNacos() {
+	utils.InitNacos("../../logs", "game1001", nil)
 }
 
 func base64Str(str string) string {
