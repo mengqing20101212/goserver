@@ -2,12 +2,11 @@ package server
 
 import (
 	"bytes"
+	"common/utils"
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"goserver/common/logger"
-	"goserver/common/utils"
-	"goserver/protobuf"
 	"net"
+	"protobuf"
 	"time"
 )
 
@@ -32,7 +31,7 @@ func (self *Connector) SendMsgData(cmd protobuf.CMD, msg proto.Message) (flag bo
 	}
 	responseData, err := proto.Marshal(msg)
 	if err != nil {
-		logger.Error(fmt.Sprintf("up pack msg error:%s, cmd:%d, msg:%s, endPoint:%s", err, cmd, msg.String(), self.endPoint.String()))
+		log.Error(fmt.Sprintf("up pack msg error:%s, cmd:%d, msg:%s, endPoint:%s", err, cmd, msg.String(), self.endPoint.String()))
 		self.Close(" Connector close by marshal data error ")
 		return false, nil
 	}
@@ -41,7 +40,7 @@ func (self *Connector) SendMsgData(cmd protobuf.CMD, msg proto.Message) (flag bo
 	self.Send(bs)
 	readLen, err := self.con.Read(self.inputMsg.GetBytes())
 	if err != nil {
-		logger.Error(fmt.Sprintf("read romote data error:%s, cmd:%d, reqPack:%s，endPoint:%s", err, cmd, pack, self.endPoint.String()))
+		log.Error(fmt.Sprintf("read romote data error:%s, cmd:%d, reqPack:%s，endPoint:%s", err, cmd, pack, self.endPoint.String()))
 		self.Close(" Connector close by read remote data error ")
 		return false, nil
 	}
@@ -50,7 +49,7 @@ func (self *Connector) SendMsgData(cmd protobuf.CMD, msg proto.Message) (flag bo
 		if unpackFlag {
 			if responsePack.sid > 0 && self.sid == 0 {
 				self.sid = responsePack.sid
-				logger.Info(fmt.Sprintf("set new sid:%d, endPoint:%s", self.sid, self.endPoint.String()))
+				log.Info(fmt.Sprintf("set new sid:%d, endPoint:%s", self.sid, self.endPoint.String()))
 			}
 			return true, responsePack
 		}
@@ -64,7 +63,7 @@ func (self *Connector) reconnect() {
 	}
 	con, err := net.Dial("tcp", self.socketIp)
 	if err != nil {
-		logger.Error(fmt.Sprintf("reconnect connect endPoint:%s fail, err:%s", self.socketIp, err))
+		log.Error(fmt.Sprintf("reconnect connect endPoint:%s fail, err:%s", self.socketIp, err))
 		return
 	}
 	self.con = con.(*net.TCPConn)

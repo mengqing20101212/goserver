@@ -1,9 +1,8 @@
 package server
 
 import (
+	"common/utils"
 	"fmt"
-	"goserver/common/logger"
-	"goserver/common/utils"
 )
 
 type CodeProto[T Package] interface {
@@ -65,8 +64,8 @@ func (self *PackageFactory) Encode(msg *Package) (packData []byte) {
 func CreatePackage(cmd int32, traceId int32, sendTimer uint32, sid uint16, body []byte) (packData *Package) {
 	pack := Package{cmd: cmd, sendTimer: sendTimer, sid: sid, body: body, bodyLen: uint16(len(body)), traceId: traceId}
 	pack.packageLen = PackageDefaultHeadLen + pack.bodyLen
-	if logger.IsDebug() {
-		logger.Debug(fmt.Sprintf("new package:%s", pack.String()))
+	if log.IsDebug() {
+		log.Debug(fmt.Sprintf("new package:%s", pack.String()))
 	}
 	return &pack
 }

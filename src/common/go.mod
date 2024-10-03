@@ -2,7 +2,10 @@ module common
 
 go 1.23.1
 
-require github.com/nacos-group/nacos-sdk-go/v2 v2.2.7
+require (
+	github.com/nacos-group/nacos-sdk-go/v2 v2.2.7
+	gopkg.in/yaml.v3 v3.0.1
+)
 
 require (
 	github.com/alibabacloud-go/debug v0.0.0-20190504072949-9472017b5c68 // indirect
@@ -40,5 +43,4 @@ require (
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/ini.v1 v1.66.2 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

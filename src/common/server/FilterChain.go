@@ -2,7 +2,6 @@ package server
 
 import (
 	"fmt"
-	"goserver/common/logger"
 )
 
 type FilterInterface interface {
@@ -13,8 +12,8 @@ type Filter struct {
 }
 
 func (self *Filter) DoFilter(msg *Package, channel *SocketChannel) bool {
-	if logger.IsDebug() {
-		logger.Debug(" test default filter")
+	if log.IsDebug() {
+		log.Debug(" test default filter")
 	}
 	return true
 }
@@ -26,7 +25,7 @@ type IpFilter struct {
 func (self *IpFilter) DoFilter(msg *Package, channel *SocketChannel) bool {
 	black := self.ipMap[channel.endPoint.Network()]
 	if black {
-		logger.Error(fmt.Sprintf("IpFilter check ip is black channel:%s", channel.String()))
+		log.Error(fmt.Sprintf("IpFilter check ip is black channel:%s", channel.String()))
 	}
 	return !black
 }
@@ -39,7 +38,7 @@ func (self *FilterChain) Filter(msg *Package, channel *SocketChannel) (success b
 	for _, filter := range self.filterList {
 		doNext := (*filter).DoFilter(msg, channel)
 		if !doNext {
-			logger.Info(fmt.Sprintf("the channel filter no pass, %s", channel.String()))
+			log.Info(fmt.Sprintf("the channel filter no pass, %s", channel.String()))
 			return false
 		}
 	}
