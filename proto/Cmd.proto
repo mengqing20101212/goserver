@@ -1,6 +1,5 @@
 syntax = "proto3";
-package protobuf;
-option go_package = "/mengqing/protobuf";
+option go_package = "protobuf/protobufMsg";
 
 enum CMD
 {

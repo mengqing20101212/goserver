@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"net"
-	"protobuf"
 	"time"
 )
 
@@ -22,7 +21,7 @@ func (self *Connector) Send(bs []byte) {
 	self.traceId++
 }
 
-func (self *Connector) SendMsgData(cmd protobuf.CMD, msg proto.Message) (flag bool, responsePack *Package) {
+func (self *Connector) SendMsgData(cmd int32, msg proto.Message) (flag bool, responsePack *Package) {
 	if !self.IsConnect() {
 		self.reconnect()
 		if !self.IsConnect() {

@@ -3,6 +3,7 @@ use (
 	./db
 	./logger
 	./server
+	../protobuf
 )
 
 go 1.23.1

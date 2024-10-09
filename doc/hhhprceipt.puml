@@ -1,0 +1,23 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+/'Alice -> Bob: Authentication Request
+Bob --> Alice: Authentication Response
+
+Alice -> Bob: Another authentication Request
+Alice <-- Bob: another authentication Response'/
+
+client --> centerServer : 请求服务器列表以及版本信息
+centerServer --> client : 返回服务器列表以及版本信息
+client --> gateServer : 发送登录信息
+gateServer --> gameServer : 转发登录信息
+gameServer --> billingServer : 验证登录信息
+billingServer --> 畅游Server : SDK登录验证
+畅游Server --> billingServer : 返回SDK登录验证成功
+billingServer --> gameServer : 返回验证成功
+gameServer --> gameServer : 加载玩家成功
+gameServer --> gateServer : 返回登录成功
+gateServer --> client : 返回登录成功
+@enduml

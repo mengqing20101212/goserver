@@ -1,13 +1,16 @@
 @echo off
- ..\tool\protoc-23.4-win64\bin\protoc.exe --proto_path=. --go_out=..\  *.proto
- ..\tool\protoc-23.4-win64\bin\protoc.exe --proto_path=. --go_out=..\  table\*.proto
-ProtoParser
-TableParser G:\WORK\me\goserver\proto\table
+ protoc --proto_path=. --go_out=..\  *.proto
+ protoc --proto_path=. --go_out=..\  table\*.proto
+
+ xcopy ..\protobuf\protobufMsg\*   ..\src\protobuf /E /I
+
+@REM ProtoParser
+@REM TableParser D:\WORK\me\goserver\proto\table
 echo %cd%
 set "tableDir=%cd%\..\table"
 cd /d "%tableDir%"
 dir
-for /r %%i in (*Table.go) do (
-    echo Formatting file: %%i
-    go fmt "%%i"
-)
+@REM for /r %%i in (*Table.go) do (
+@REM     echo Formatting file: %%i
+@REM     go fmt "%%i"
+@REM )
