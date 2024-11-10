@@ -79,9 +79,12 @@ func ParserConfig(cfg string) {
 var Context = new(ServerContext)
 var log *logger.Logger
 
-func InitContext(logDir, serverId string, serverType ServerType) {
+func InitContext(logDir, serverId, env string, serverType ServerType) {
 	Context.Config.LogDir = logDir
 	logger.InitType(logDir)
 	log = logger.SystemLogger
-	utils.InitNacos(serverId, serverType.String(), ParserConfig)
+	utils.InitNacos(serverId, serverType.String(), env, ParserConfig)
+	utils.RegisterNewServerCallBack(serverType.String(), func(serverType string) {
+		log.Info("serverType: " + serverType)
+	})
 }

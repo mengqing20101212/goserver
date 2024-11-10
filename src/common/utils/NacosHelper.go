@@ -1,28 +1,37 @@
 package utils
 
 import (
+	"fmt"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/config_client"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 )
 
 // github.com/nacos-group/nacos-sdk-go/v2/common/constant
 // http://139.224.80.204:8848/
-var ip = "139.224.80.204"
-var NameClient *naming_client.INamingClient
-var ConfigClient *config_client.IConfigClient
+var ip = "192.168.161.182"
+var serverName = "rpcNodeService"
+var NameClientPtr *naming_client.INamingClient
+var ConfigClientPtr *config_client.IConfigClient
 
-func InitNacos(serverId, serverType string, parserConfigCallback func(string)) {
+// InitNacos 初始化Nacos客户端，包括配置客户端和命名客户端，并注册服务实例。
+// serverId: 服务器ID
+// serverType: 服务类型
+// env: 环境变量
+// parserConfigCallback: 配置解析回调函数
+func InitNacos(serverId, serverType, env string, parserConfigCallback func(string)) {
 	//create ServerConfig
+	log.Info(fmt.Sprintln("InitNacos params serverId:", serverId, "serverType:", serverType, "env:", env))
 	var sc = []constant.ServerConfig{
 		*constant.NewServerConfig(ip, 8848),
 	}
 
 	//create ClientConfig
 	cc := *constant.NewClientConfig(
-		//constant.WithNamespaceId("public"),
+		constant.WithNamespaceId(env),
 		constant.WithTimeoutMs(5000),
 		constant.WithNotLoadCacheAtStart(true),
 		constant.WithLogDir("../../nacos/log"),
@@ -37,8 +46,8 @@ func InitNacos(serverId, serverType string, parserConfigCallback func(string)) {
 			ServerConfigs: sc,
 		},
 	)
-	ConfigClient = &configClient
-	config := initConfig(serverId)
+	ConfigClientPtr = &configClient
+	config := initConfig(&serverId, &serverType)
 	if parserConfigCallback != nil {
 		parserConfigCallback(*config)
 	}
@@ -55,43 +64,98 @@ func InitNacos(serverId, serverType string, parserConfigCallback func(string)) {
 		panic(err)
 	}
 
-	NameClient = &client
+	NameClientPtr = &client
 
+	//注册该节点
+	serverConfig := make(map[string]string)
+	serverConfig["serverId"] = serverId
 	success, err := client.RegisterInstance(vo.RegisterInstanceParam{
 		Ip:          ip,
 		Port:        8848,
-		ServiceName: serverId,
-		Weight:      10,
+		ServiceName: serverName,
+		Weight:      100,
 		Enable:      true,
 		Healthy:     true,
 		Ephemeral:   true,
-		ClusterName: "cluster-a", // 默认值DEFAULT
-		GroupName:   serverType,  // 默认值DEFAULT_GROUP
+		ClusterName: env,        // 默认值DEFAULT
+		GroupName:   serverType, // 默认值DEFAULT_GROUP
+		Metadata:    serverConfig,
 	})
 	if err != nil {
+		print(err)
 		panic("RegisterInstance error")
 	}
+
+	//监听节点
 	if !success {
 		panic("RegisterInstance error")
 	}
 }
+func RegisterNewServerCallBack(serverType string, newServerCallBack func(string)) {
+	if NameClientPtr == nil {
+		log.Error("NameClientPtr is nil")
+		return
+	}
 
-func initConfig(serverId string) *string {
-	cfg, err := (*ConfigClient).GetConfig(vo.ConfigParam{
-		DataId: "gameConfig",
-		Group:  "DEFAULT_GROUP",
+	err := (*NameClientPtr).Subscribe(&vo.SubscribeParam{
+		ServiceName: serverName,
+		GroupName:   serverType,
+		SubscribeCallback: func(services []model.Instance, err error) {
+			if err != nil {
+				log.Error("订阅回调发生错误: " + err.Error())
+				return
+			}
+			log.Info(fmt.Sprintln(" 上架节点,当前节点数量:", len(services)))
+			for _, v := range services {
+				log.Info(fmt.Sprintln("服务实例信息: ", v))
+				newServerCallBack(v.Metadata["serverId"])
+			}
+		},
 	})
 	if err != nil {
+		log.Error("订阅回调发生错误: " + err.Error())
+		return
+	}
+	err = (*NameClientPtr).Unsubscribe(&vo.SubscribeParam{
+		ServiceName: serverName,
+		GroupName:   serverType,
+		SubscribeCallback: func(services []model.Instance, err error) {
+			if err != nil {
+				log.Error("订阅回调发生错误: " + err.Error())
+				return
+			}
+			log.Info(fmt.Sprintln("下架节点,当前节点数量:", len(services)))
+			for _, v := range services {
+				log.Info(fmt.Sprintln("服务实例信息: ", v))
+				newServerCallBack(v.Metadata["serverId"])
+			}
+		},
+	})
+	if err != nil {
+		log.Error("订阅回调发生错误: " + err.Error())
+		return
+	}
+}
+
+func initConfig(serverId, serverType *string) *string {
+	cfg, err := (*ConfigClientPtr).GetConfig(vo.ConfigParam{
+		//DataId:  *serverId,
+		DataId:  "game1001",
+		Group:   *serverType,
+		Content: "",
+	})
+	if err != nil {
+		print(err)
 		panic(err)
 	}
-	println(cfg)
+	log.Info(cfg)
 	return &cfg
 	//common.Context.ParserConfig(cfg)
 
 }
 
 func CloseNacos() {
-	_, _ = (*NameClient).DeregisterInstance(vo.DeregisterInstanceParam{
+	_, _ = (*NameClientPtr).DeregisterInstance(vo.DeregisterInstanceParam{
 		Ip:          ip,
 		Port:        8848,
 		ServiceName: "common.Context.Config.ServerId",

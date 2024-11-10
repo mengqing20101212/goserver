@@ -5,22 +5,31 @@ import (
 	"common/utils"
 	"encoding/base64"
 	"logger"
+	"os"
 	"time"
 )
 
 func main() {
 	//testLogger()
-	testConfig()
+	if len(os.Args) > 1 {
+		testConfig(os.Args[1])
+	} else {
+		testConfig("game1001")
+	}
 	//testNacos()
 
 }
 
-func testConfig() {
-	common.InitContext("../../logs", "game1001", common.Game)
+func testConfig(serverId string) {
+	common.InitContext("../../logs", serverId, "ly", common.Game)
+	time.Sleep(1023 * time.Second)
 }
 
 func testNacos() {
-	utils.InitNacos("../../logs", "game1001", nil)
+	utils.InitNacos("../../logs", "game1001", "ly", nil)
+	utils.RegisterNewServerCallBack(common.Game.String(), func(str string) {
+		println(str)
+	})
 }
 
 func base64Str(str string) string {
