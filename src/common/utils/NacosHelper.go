@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"common"
 	"fmt"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/config_client"
@@ -8,6 +9,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	"strconv"
 )
 
 // github.com/nacos-group/nacos-sdk-go/v2/common/constant
@@ -69,6 +71,7 @@ func InitNacos(serverId, serverType, env string, parserConfigCallback func(strin
 	//注册该节点
 	serverConfig := make(map[string]string)
 	serverConfig["serverId"] = serverId
+	serverConfig["serverPort"] = strconv.Itoa(common.Context.Config.ServerPort)
 	success, err := client.RegisterInstance(vo.RegisterInstanceParam{
 		Ip:          ip,
 		Port:        8848,
@@ -91,7 +94,7 @@ func InitNacos(serverId, serverType, env string, parserConfigCallback func(strin
 		panic("RegisterInstance error")
 	}
 }
-func RegisterNewServerCallBack(serverType string, newServerCallBack func(string)) {
+func RegisterNewServerCallBack(serverType string, newServerCallBack func(isAdd bool, instance model.Instance)) {
 	if NameClientPtr == nil {
 		log.Error("NameClientPtr is nil")
 		return
@@ -108,7 +111,7 @@ func RegisterNewServerCallBack(serverType string, newServerCallBack func(string)
 			log.Info(fmt.Sprintln(" 上架节点,当前节点数量:", len(services)))
 			for _, v := range services {
 				log.Info(fmt.Sprintln("服务实例信息: ", v))
-				newServerCallBack(v.Metadata["serverId"])
+				newServerCallBack(true, v)
 			}
 		},
 	})
@@ -127,7 +130,7 @@ func RegisterNewServerCallBack(serverType string, newServerCallBack func(string)
 			log.Info(fmt.Sprintln("下架节点,当前节点数量:", len(services)))
 			for _, v := range services {
 				log.Info(fmt.Sprintln("服务实例信息: ", v))
-				newServerCallBack(v.Metadata["serverId"])
+				newServerCallBack(false, v)
 			}
 		},
 	})

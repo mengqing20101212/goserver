@@ -16,39 +16,39 @@ type Connector struct {
 	sid       uint16
 }
 
-func (self *Connector) Send(bs []byte) {
-	self.SendMsg(bs)
-	self.traceId++
+func (this *Connector) Send(bs []byte) {
+	this.SendMsg(bs)
+	this.traceId++
 }
 
-func (self *Connector) SendMsgData(cmd int32, msg proto.Message) (flag bool, responsePack *Package) {
-	if !self.IsConnect() {
-		self.reconnect()
-		if !self.IsConnect() {
+func (this *Connector) SendMsgData(cmd int32, msg proto.Message) (flag bool, responsePack *Package) {
+	if !this.IsConnect() {
+		this.reconnect()
+		if !this.IsConnect() {
 			return false, nil
 		}
 	}
 	responseData, err := proto.Marshal(msg)
 	if err != nil {
-		log.Error(fmt.Sprintf("up pack msg error:%s, cmd:%d, msg:%s, endPoint:%s", err, cmd, msg.String(), self.endPoint.String()))
-		self.Close(" Connector close by marshal data error ")
+		log.Error(fmt.Sprintf("up pack msg error:%s, cmd:%d, msg:%s, endPoint:%s", err, cmd, msg.String(), this.endPoint.String()))
+		this.Close(" Connector close by marshal data error ")
 		return false, nil
 	}
-	pack := CreatePackage(int32(cmd), self.traceId, uint32(time.Now().Unix()), self.sid, responseData)
-	bs := self.protoCode.Encode(pack)
-	self.Send(bs)
-	readLen, err := self.con.Read(self.inputMsg.GetBytes())
+	pack := CreatePackage(int32(cmd), this.traceId, uint32(time.Now().Unix()), this.sid, responseData)
+	bs := this.protoCode.Encode(pack)
+	this.Send(bs)
+	readLen, err := this.con.Read(this.inputMsg.GetBytes())
 	if err != nil {
-		log.Error(fmt.Sprintf("read romote data error:%s, cmd:%d, reqPack:%s，endPoint:%s", err, cmd, pack, self.endPoint.String()))
-		self.Close(" Connector close by read remote data error ")
+		log.Error(fmt.Sprintf("read romote data error:%s, cmd:%d, reqPack:%s，endPoint:%s", err, cmd, pack, this.endPoint.String()))
+		this.Close(" Connector close by read remote data error ")
 		return false, nil
 	}
 	if readLen > 0 {
-		responsePack, unpackFlag := self.protoCode.Decoder(&self.inputMsg)
+		responsePack, unpackFlag := this.protoCode.Decoder(&this.inputMsg)
 		if unpackFlag {
-			if responsePack.sid > 0 && self.sid == 0 {
-				self.sid = responsePack.sid
-				log.Info(fmt.Sprintf("set new sid:%d, endPoint:%s", self.sid, self.endPoint.String()))
+			if responsePack.sid > 0 && this.sid == 0 {
+				this.sid = responsePack.sid
+				log.Info(fmt.Sprintf("set new sid:%d, endPoint:%s", this.sid, this.endPoint.String()))
 			}
 			return true, responsePack
 		}
@@ -56,18 +56,18 @@ func (self *Connector) SendMsgData(cmd int32, msg proto.Message) (flag bool, res
 	return false, nil
 }
 
-func (self *Connector) reconnect() {
-	if self.con != nil {
-		self.con.Close()
+func (this *Connector) reconnect() {
+	if this.con != nil {
+		this.con.Close()
 	}
-	con, err := net.Dial("tcp", self.socketIp)
+	con, err := net.Dial("tcp", this.socketIp)
 	if err != nil {
-		log.Error(fmt.Sprintf("reconnect connect endPoint:%s fail, err:%s", self.socketIp, err))
+		log.Error(fmt.Sprintf("reconnect connect endPoint:%s fail, err:%s", this.socketIp, err))
 		return
 	}
-	self.con = con.(*net.TCPConn)
-	self.cid = 1
-	self.endPoint = self.con.RemoteAddr()
+	this.con = con.(*net.TCPConn)
+	this.cid = 1
+	this.endPoint = this.con.RemoteAddr()
 }
 
 func CreateConnect(addr string, protoCode CodeProto[Package]) *Connector {

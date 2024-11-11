@@ -2,9 +2,12 @@ package common
 
 import (
 	"common/utils"
+	"fmt"
+	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"gopkg.in/yaml.v3"
 	"logger"
 	"server"
+	"strconv"
 )
 
 type ServerType int
@@ -15,6 +18,7 @@ const (
 	GATE
 	SCENE
 	GM
+	Unknown
 )
 
 func (s ServerType) String() string {
@@ -67,6 +71,22 @@ type ServerContext struct {
 	Server *server.Server
 }
 
+// 用于rpc 调用需要的服务器节点信息
+type ServerNode struct {
+	ServerType ServerType     //服务器类型
+	ServerId   string         //服务器id
+	ServerPort int            //服务器端口
+	data       model.Instance //服务器其他信息 IP 之类的 nacos 信息
+}
+
+func (this *ServerNode) String() string {
+	return fmt.Sprintln("serverNodeInfo: serverType: ", this.ServerType.String(), " serverId: ", this.ServerId+" ipaddr: ", this.data.Ip, ":", strconv.Itoa(this.ServerPort))
+}
+
+func (this *ServerNode) GetIP() string {
+	return this.data.Ip
+}
+
 func ParserConfig(cfg string) {
 	err := yaml.Unmarshal([]byte(cfg), &Context.Config)
 	if err != nil {
@@ -74,6 +94,38 @@ func ParserConfig(cfg string) {
 		return
 	}
 	log.Info(cfg)
+}
+
+func ParserServerNode(isAdd bool, data model.Instance) {
+	serverId := data.Metadata["serverId"]
+	if isAdd {
+		serverNode := new(ServerNode)
+		serverNode.ServerId = serverId
+		serverNode.ServerPort, _ = strconv.Atoi(data.Metadata["serverPort"])
+		serverNode.ServerType = getServerType(data.ServiceName)
+		serverNode.data = data
+		RegisterServerNode(serverNode)
+	} else {
+		UnRegisterServerNode(serverId)
+	}
+
+}
+
+func getServerType(serviceName string) ServerType {
+	switch serviceName {
+	case "Game":
+		return Game
+	case "Login":
+		return LOGIN
+	case "Gate":
+		return GATE
+	case "Scene":
+		return SCENE
+	case "Gm":
+		return GM
+	default:
+		return Unknown
+	}
 }
 
 var Context = new(ServerContext)
@@ -84,7 +136,5 @@ func InitContext(logDir, serverId, env string, serverType ServerType) {
 	logger.InitType(logDir)
 	log = logger.SystemLogger
 	utils.InitNacos(serverId, serverType.String(), env, ParserConfig)
-	utils.RegisterNewServerCallBack(serverType.String(), func(serverType string) {
-		log.Info("serverType: " + serverType)
-	})
+	utils.RegisterNewServerCallBack(serverType.String(), ParserServerNode)
 }

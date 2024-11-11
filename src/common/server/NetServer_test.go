@@ -3,8 +3,8 @@ package server
 import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"goserver/common/logger"
-	"goserver/protobuf"
+	"logger"
+	"protobufMsg"
 	"strconv"
 	"testing"
 	"time"
@@ -17,20 +17,21 @@ func TestByteServer(t *testing.T) {
 }
 
 func TestConnecter(t *testing.T) {
-	logger.Init("../logs", "test1.log")
+	logger := logger.SystemLogger
+	//logger.Init("../logs", "test1.log")
 	for i := 0; i < 5000; i++ {
 		time.Sleep(3 * time.Millisecond)
 		go func(i int) {
 			codeProto := PackageFactory{}
 			sc := CreateConnect("127.0.0.1:2001", &codeProto)
-			req := protobuf.CsLogin{
+			req := protobufMsg.CsLogin{
 				Name: "hello Name:" + strconv.Itoa(i),
 				Male: i%2 == 1,
 			}
 			for {
-				flag, responsePack := sc.SendMsgData(protobuf.CMD_cmd_login, &req)
+				flag, responsePack := sc.SendMsgData(int32(protobufMsg.CMD_cmd_login), &req)
 				if flag {
-					response := protobuf.ScLogin{}
+					response := protobufMsg.ScLogin{}
 					proto.Unmarshal(responsePack.body, &response)
 					logger.Info(fmt.Sprintf("receive msg:%s ", response.String()))
 				}
