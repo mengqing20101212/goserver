@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"protobufMsg"
 	"sync"
 )
 
@@ -37,7 +38,7 @@ func loopReadData(channel *SocketChannel, server *Server, mgr *ConnectManger) {
 			} else {
 				break
 			}
-			reqMessage := CreateProtoRequestMessage(pack.cmd)
+			reqMessage := protobufMsg.CreateProtoRequestMessage(pack.cmd)
 			if reqMessage == nil {
 				logger.Error(fmt.Sprintf("Message not found pack:%s", pack))
 				mgr.DelConn(channel)

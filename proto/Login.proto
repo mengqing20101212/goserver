@@ -1,12 +1,13 @@
 syntax = "proto3";
 option go_package = "protobuf/protobufMsg";
-// this is a comment
+//msgId:100 登录协议请求
 message csLogin
 {
   string name = 1;
   bool male = 2;
   repeated int32 scores = 3;
 }
+//msgId:100 登录协议响应
 message scLogin
 {
   string name = 1;

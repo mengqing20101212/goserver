@@ -13,9 +13,8 @@ import (
 	"text/template"
 )
 
-const pbDir = "G:\\WORK\\me\\goserver\\proto"
+var pbDir = ""
 
-var pbFiles = make([]string, 10)
 var fileProtoMap = make(map[string]MsgProto)
 var lock = sync.Mutex{}
 
@@ -36,6 +35,7 @@ const (
 
 func main2() {
 	fmt.Println("start parse proto buffer")
+	pbDir, _ = os.Getwd()
 	loadProtoFiles(pbDir)
 	fmt.Println(fileProtoMap)
 	createGoHandlerFile()
@@ -73,11 +73,11 @@ func createGoHandlerFile() {
 	}
 
 	// Relative path to the template file
-	relativePath := "HandlerFactory.tmpl"
+	relativePath := "MsgCreateFactory.tmpl"
 
 	// Resolve the absolute path using filepath.Join
 	absPath := filepath.Join(pbDir, relativePath)
-	tmpl, err := template.New("HandlerFactory.tmpl").ParseFiles(absPath)
+	tmpl, err := template.New("MsgCreateFactory.tmpl").ParseFiles(absPath)
 	if err != nil {
 		fmt.Println("Error parsing template:", err)
 		return
@@ -89,7 +89,7 @@ func createGoHandlerFile() {
 		fmt.Println("mapTemplate Execute error :", err)
 	}
 	fmt.Println(buf.String())
-	outFile := "../src/common/server/HandlerFactory.go"
+	outFile := "../src/common/server/MsgCreateFactory.go"
 	outFile = filepath.Join(pbDir, outFile)
 	os.Remove(outFile)
 	fs, err := os.OpenFile(outFile, os.O_RDWR|os.O_CREATE, 0755)
@@ -116,7 +116,7 @@ func loadProtoFiles(pbDir string) {
 
 	waitNum := 0
 	fileList := make([]string, 0)
-	cmdFileName := ""
+	//cmdFileName := ""
 	for _, file := range files {
 		fileStat, err := os.Stat(file)
 		i++
@@ -136,14 +136,14 @@ func loadProtoFiles(pbDir string) {
 			fileNameOnly := strings.TrimSuffix(fileStat.Name(), fileType)
 			waitNum++
 			if fileNameOnly == "Cmd" {
-				cmdFileName = file
+				//cmdFileName = file
 			} else {
 				fileList = append(fileList, file)
 			}
 		}
 	}
 	wg.Add(waitNum)
-	go parseCmdFile(cmdFileName, &wg)
+	//go parseCmdFile(cmdFileName, &wg)
 	for _, file := range fileList {
 		go parseNormalFile(file, &wg)
 	}

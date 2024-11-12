@@ -1,0 +1,38 @@
+package protobufMsg
+
+import (
+	"fmt"
+	"github.com/golang/protobuf/proto"
+)
+
+func CreateProtoRequestMessage(cmd int32) (msg proto.Message) {
+	switch cmd {
+
+	 {{range $cmd, $message := .}}
+    	 case int32({{$cmd}}):
+         		return &protobuf.Cs{{$message}}{}
+            {{end}}
+    	}
+
+	default:
+		fmt.Println("CreateProtoRequestMessage not found cmdId:", cmd)
+		return nil
+
+	}
+}
+
+func CreateProtoResponseMessage(cmd int32) (msg proto.Message) {
+	switch cmd {
+
+ {{range $cmd, $message := .}}
+    	 case int32({{$cmd}}):
+         		return &protobuf.Sc{{$message}}{}
+            {{end}}
+    	}
+
+	default:
+		fmt.Println("CreateProtoResponseMessage not found cmdId:", cmd)
+		return nil
+
+	}
+}

@@ -35,19 +35,3 @@ func DefaultInitHandler() {
 	//InitHandler(100, &LoginHandler{})
 
 }
-
-// TODO  应该由脚本生成
-func CreateProtoRequestMessage(cmd int32) (msg proto.Message) {
-	switch cmd {
-
-	case 100:
-		return &protobufMsg.CsLogin{}
-
-	default:
-		log.Error(fmt.Sprintf(" not found cmdId:%d", cmd))
-		return nil
-
-	}
-	log.Error(fmt.Sprintf(" not found cmdId:%d", cmd))
-	return nil
-}
