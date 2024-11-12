@@ -2,7 +2,7 @@
  protoc --proto_path=. --go_out=..\  *.proto
  protoc --proto_path=. --go_out=..\  table\*.proto
 
- xcopy ..\protobuf\protobufMsg\*   ..\src\protobuf /E /I
+ xcopy ..\protobuf\protobufMsg\*   ..\src\protobufMsg /E /I
 
 @REM ProtoParser
 @REM TableParser D:\WORK\me\goserver\proto\table
