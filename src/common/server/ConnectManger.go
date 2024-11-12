@@ -9,7 +9,7 @@ import (
 )
 
 type ConnectManger struct {
-	connMap map[int32]*SocketChannel
+	connMap map[uint16]*SocketChannel
 	lock    sync.Mutex
 }
 
@@ -89,7 +89,7 @@ func (self *ConnectManger) DelConn(channel *SocketChannel) {
 	logger.Info(fmt.Sprintf("[ConnectManger] delete SocketChannel:%s", channel))
 }
 
-func (self *ConnectManger) SendMsgToConn(cid int32, sendData []byte) error {
+func (self *ConnectManger) SendMsgToConn(cid uint16, sendData []byte) error {
 	channel := self.connMap[cid]
 	if channel != nil {
 		logger.Error(fmt.Sprintf("[SendMsgToConn] not found channel:%d", cid))
@@ -101,7 +101,7 @@ func (self *ConnectManger) SendMsgToConn(cid int32, sendData []byte) error {
 
 func NewConnectManger(maxConLen int) (mgr *ConnectManger) {
 	manger := ConnectManger{
-		connMap: make(map[int32]*SocketChannel, maxConLen),
+		connMap: make(map[uint16]*SocketChannel, maxConLen),
 	}
 	return &manger
 }

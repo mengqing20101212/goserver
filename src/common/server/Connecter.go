@@ -13,7 +13,6 @@ type Connector struct {
 	SocketChannel
 	protoCode CodeProto[Package]
 	traceId   int32
-	sid       uint16
 }
 
 func (this *Connector) Send(bs []byte) {
@@ -21,6 +20,8 @@ func (this *Connector) Send(bs []byte) {
 	this.traceId++
 }
 
+// SendMsgData sends a proto.Message to the server with the given command and processes the response.
+// Returns a boolean flag indicating success, and the response package if successful.
 func (this *Connector) SendMsgData(cmd int32, msg proto.Message) (flag bool, responsePack *Package) {
 	if !this.IsConnect() {
 		this.reconnect()
@@ -34,7 +35,7 @@ func (this *Connector) SendMsgData(cmd int32, msg proto.Message) (flag bool, res
 		this.Close(" Connector close by marshal data error ")
 		return false, nil
 	}
-	pack := CreatePackage(int32(cmd), this.traceId, uint32(time.Now().Unix()), this.sid, responseData)
+	pack := CreatePackage(int32(cmd), this.traceId, uint32(time.Now().Unix()), this.cid, responseData)
 	bs := this.protoCode.Encode(pack)
 	this.Send(bs)
 	readLen, err := this.con.Read(this.inputMsg.GetBytes())
@@ -46,9 +47,9 @@ func (this *Connector) SendMsgData(cmd int32, msg proto.Message) (flag bool, res
 	if readLen > 0 {
 		responsePack, unpackFlag := this.protoCode.Decoder(&this.inputMsg)
 		if unpackFlag {
-			if responsePack.sid > 0 && this.sid == 0 {
-				this.sid = responsePack.sid
-				log.Info(fmt.Sprintf("set new sid:%d, endPoint:%s", this.sid, this.endPoint.String()))
+			if responsePack.sid > 0 && this.cid == 0 {
+				this.cid = responsePack.sid
+				log.Info(fmt.Sprintf("set new sid:%d, endPoint:%s", this.cid, this.endPoint.String()))
 			}
 			return true, responsePack
 		}
@@ -66,14 +67,14 @@ func (this *Connector) reconnect() {
 		return
 	}
 	this.con = con.(*net.TCPConn)
-	this.cid = 1
+	this.cid = 0
 	this.endPoint = this.con.RemoteAddr()
 }
 
 func CreateConnect(addr string, protoCode CodeProto[Package]) *Connector {
 	sc := Connector{
 		SocketChannel: SocketChannel{
-			cid:      -1,
+			cid:      0,
 			socketIp: addr,
 			inputMsg: utils.NewByteBufferByBuf(bytes.NewBuffer(make([]byte, DefaultInputLen))),
 		},

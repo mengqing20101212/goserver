@@ -9,21 +9,26 @@ import (
 	"os"
 )
 
+// DefaultInputLen defines the default length (5120 bytes) for the buffer used in socket communication.
 const DefaultInputLen = 1024 * 5
+
+// DefaultMaxConnectLen specifies the default maximum number of connections that can be managed.
 const DefaultMaxConnectLen = 1024
 
+// TCP 服务端连接
 type Server struct {
-	port          int
-	proto         string
-	codecsProto   CodeProto[Package]
-	filterChain   *FilterChain
-	listener      *net.TCPListener
-	ConnectManger *ConnectManger
-	connectNum    int32
+	port          int                //端口
+	proto         string             //协议类型 目前是 只支持 tcp
+	codecsProto   CodeProto[Package] //编码解码器
+	filterChain   *FilterChain       // filterChain represents a sequence of filters to process packages in the server.
+	listener      *net.TCPListener   // listener holds the TCP listener for accepting incoming connections.
+	ConnectManger *ConnectManger     // ConnectManger handles the management of active socket connections for the server.
+	connectNum    uint16             // connectNum indicates the number of active connections managed by the server.
 }
 
 var log = logger.SystemLogger
 
+// NewServer initializes and returns a new Server instance with the specified port.
 func NewServer(port int) (server *Server) {
 	server = &Server{
 		port:          port,
@@ -35,6 +40,8 @@ func NewServer(port int) (server *Server) {
 	return server
 }
 
+// Start initializes the server, sets up the filter chain, starts listening on the specified port,
+// and accepts incoming TCP connections in a loop.
 func (self *Server) Start() {
 	log.Info("[Server] start begin")
 	self.filterChain.AddFilter(&Filter{})
@@ -60,7 +67,9 @@ func (self *Server) Start() {
 	}
 }
 
-func (self *Server) OnAccept(con net.Conn, cid int32) {
+// OnAccept handles the acceptance of a new TCP connection, initializes a new SocketChannel, and adds it to the ConnectManager.
+// cid socketId
+func (self *Server) OnAccept(con net.Conn, cid uint16) {
 	tcpConn, ok := con.(*net.TCPConn)
 	if !ok {
 		// 处理类型转换失败的情况
@@ -70,7 +79,7 @@ func (self *Server) OnAccept(con net.Conn, cid int32) {
 	addr := tcpConn.RemoteAddr()
 	sc := SocketChannel{
 		endPoint: addr,
-		cid:      cid,
+		cid:      cid, //socketId
 		con:      tcpConn,
 		inputMsg: utils.NewByteBufferByBuf(bytes.NewBuffer(make([]byte, DefaultInputLen))),
 	}
@@ -79,11 +88,11 @@ func (self *Server) OnAccept(con net.Conn, cid int32) {
 }
 
 type SocketChannel struct {
-	endPoint net.Addr
-	socketIp string
-	cid      int32
-	con      *net.TCPConn
-	inputMsg utils.ByteBuffer
+	endPoint net.Addr         // endPoint represents the network address of the remote connection for the SocketChannel.
+	socketIp string           // socketIp is the IP address associated with the socket connection.
+	cid      uint16           // cid socket channel identifier
+	con      *net.TCPConn     // con represents the TCP connection associated with the SocketChannel.
+	inputMsg utils.ByteBuffer // inputMsg stores the incoming message data as a ByteBuffer.
 }
 
 func (e *SocketChannel) String() string {
@@ -102,11 +111,11 @@ func (self *SocketChannel) SendMsg(data []byte) {
 }
 
 func (self SocketChannel) IsConnect() bool {
-	return self.cid != -1
+	return self.cid != 0
 }
 
 func (e *SocketChannel) Close(s string) {
 	log.Info(s)
 	e.con.Close()
-	e.cid = -1
+	e.cid = 0
 }
