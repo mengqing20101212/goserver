@@ -87,13 +87,14 @@ func (this *ServerNode) GetIP() string {
 	return this.data.Ip
 }
 
-func ParserConfig(cfg string) {
+func ParserConfig(cfg string) int {
 	err := yaml.Unmarshal([]byte(cfg), &Context.Config)
 	if err != nil {
 		panic("parser config error " + err.Error())
-		return
+		return 0
 	}
 	log.Info(cfg)
+	return Context.Config.ServerPort
 }
 
 func ParserServerNode(isAdd bool, data model.Instance) {

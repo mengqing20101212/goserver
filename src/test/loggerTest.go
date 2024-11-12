@@ -8,7 +8,7 @@ import (
 var log logger.Logger
 
 func main() {
-	testLogger()
+	//testLogger()
 }
 
 func testLogger() {

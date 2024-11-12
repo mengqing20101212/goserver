@@ -6,31 +6,17 @@ import (
 	"protobufMsg"
 )
 
-type MsgHandlerInterface interface {
-	Execute(msg proto.Message, channel *SocketChannel) (res bool, message proto.Message)
-	HandLerName() string
+type HandleFunc func(msg *proto.Message, channel *SocketChannel) (res bool, responseMessage proto.Message)
+
+// 初始化 指定模块 并注册所有的 msg handler 处理器
+type HandlerInterface interface {
+	Initializer()       //初始化模块
+	HandleName() string //该模块名称
 }
 
-var handlerMap = make(map[int32]MsgHandlerInterface)
+var handlerMap = make(map[int32]HandleFunc)
 
-type EmptyHandler struct {
-}
-
-func (resf *EmptyHandler) Execute(msg proto.Message, channel *SocketChannel) (res bool, message proto.Message) {
-	log.Error("not run EmptyHandler error")
-	return false, nil
-}
-func (self *EmptyHandler) HandLerName() string {
-	return "EmptyHandler"
-}
-
-type LoginHandler struct{ EmptyHandler }
-
-func (self *LoginHandler) HandLerName() string {
-	return "LoginHandler"
-}
-
-func CreateHandler(pack *Package) MsgHandlerInterface {
+func CreateHandler(pack *Package) HandleFunc {
 	handler := handlerMap[pack.cmd]
 	if handler != nil {
 		return handler
@@ -39,17 +25,18 @@ func CreateHandler(pack *Package) MsgHandlerInterface {
 	return nil
 }
 
-func InitHandler(cmd int32, handler MsgHandlerInterface) {
+func InitHandler(cmd int32, handler HandleFunc) {
 	handlerMap[cmd] = handler
-	log.Info(fmt.Sprintf(" add new cmdId:%d, handler:%s", cmd, handler.HandLerName()))
+	log.Info(fmt.Sprintf(" add new cmdId:%d, handler:%s", cmd, protobufMsg.CMD_name[cmd]))
 }
 
 func DefaultInitHandler() {
 
-	InitHandler(100, &LoginHandler{})
+	//InitHandler(100, &LoginHandler{})
 
 }
 
+// TODO  应该由脚本生成
 func CreateProtoRequestMessage(cmd int32) (msg proto.Message) {
 	switch cmd {
 

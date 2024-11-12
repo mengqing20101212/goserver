@@ -1,0 +1,10 @@
+
+use (
+.
+../common
+../common/server
+../common/db
+../common/logger
+../protobufMsg
+)
+go 1.23.3

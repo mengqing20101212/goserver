@@ -51,7 +51,7 @@ func loopReadData(channel *SocketChannel, server *Server, mgr *ConnectManger) {
 				return
 			}
 			handler := CreateHandler(pack)
-			returnFlag, response := handler.Execute(reqMessage, channel)
+			returnFlag, response := handler(&reqMessage, channel)
 			if !returnFlag {
 				logger.Info(fmt.Sprintf(" package no result req:%s, pack:%s", reqMessage.String(), pack.String()))
 				continue

@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"common"
 	"fmt"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/config_client"
@@ -24,7 +23,7 @@ var ConfigClientPtr *config_client.IConfigClient
 // serverType: 服务类型
 // env: 环境变量
 // parserConfigCallback: 配置解析回调函数
-func InitNacos(serverId, serverType, env string, parserConfigCallback func(string)) {
+func InitNacos(serverId, serverType, env string, parserConfigCallback func(string) int) {
 	//create ServerConfig
 	log.Info(fmt.Sprintln("InitNacos params serverId:", serverId, "serverType:", serverType, "env:", env))
 	var sc = []constant.ServerConfig{
@@ -50,8 +49,9 @@ func InitNacos(serverId, serverType, env string, parserConfigCallback func(strin
 	)
 	ConfigClientPtr = &configClient
 	config := initConfig(&serverId, &serverType)
+	serverPort := 0
 	if parserConfigCallback != nil {
-		parserConfigCallback(*config)
+		serverPort = parserConfigCallback(*config)
 	}
 
 	// create naming client
@@ -71,7 +71,7 @@ func InitNacos(serverId, serverType, env string, parserConfigCallback func(strin
 	//注册该节点
 	serverConfig := make(map[string]string)
 	serverConfig["serverId"] = serverId
-	serverConfig["serverPort"] = strconv.Itoa(common.Context.Config.ServerPort)
+	serverConfig["serverPort"] = strconv.Itoa(serverPort)
 	success, err := client.RegisterInstance(vo.RegisterInstanceParam{
 		Ip:          ip,
 		Port:        8848,
