@@ -6,7 +6,7 @@ set "folderPath=..\protobuf\protobufMsg"
 
 @REM ProtoParser
 
-EM Check if the folder exists
+REM Check if the folder exists
 if exist "%folderPath%" (
     echo Deleting folder: %folderPath%
     rmdir /s /q "%folderPath%"
