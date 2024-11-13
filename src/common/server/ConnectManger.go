@@ -16,8 +16,9 @@ type ConnectManger struct {
 
 type NetClient struct {
 	SocketChannel
-	lock sync.Mutex
-	//receiveMsgQueue chan
+	lock            sync.Mutex
+	receiveMsgQueue chan *PackageMessage //收到远端的包
+	sendMsgQueue    chan *PackageMessage //待发送的远端的包
 }
 
 // 从socket 读取数据 并分发到指定的client 处理
