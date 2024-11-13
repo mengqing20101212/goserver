@@ -14,6 +14,13 @@ type ConnectManger struct {
 	lock    sync.Mutex
 }
 
+type NetClient struct {
+	SocketChannel
+	lock sync.Mutex
+	//receiveMsgQueue chan
+}
+
+// 从socket 读取数据 并分发到指定的client 处理
 func loopReadData(channel *SocketChannel, server *Server, mgr *ConnectManger) {
 	for {
 		bs := make([]byte, 256)
@@ -51,6 +58,7 @@ func loopReadData(channel *SocketChannel, server *Server, mgr *ConnectManger) {
 				mgr.DelConn(channel)
 				return
 			}
+
 			handler := CreateHandler(pack)
 			returnFlag, response := handler(&reqMessage, channel)
 			if !returnFlag {
@@ -65,7 +73,6 @@ func loopReadData(channel *SocketChannel, server *Server, mgr *ConnectManger) {
 			}
 			resPack := CreatePackage(pack.cmd, pack.traceId, pack.sendTimer, pack.sid, responseData)
 			channel.SendMsg(server.codecsProto.Encode(resPack))
-			fmt.Println(response)
 		}
 
 	}

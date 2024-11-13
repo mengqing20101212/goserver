@@ -3,6 +3,7 @@ package server
 import (
 	"common/utils"
 	"fmt"
+	"github.com/golang/protobuf/proto"
 )
 
 type CodeProto[T Package] interface {
@@ -19,6 +20,11 @@ type Package struct {
 	seq        uint32
 	bodyLen    uint16
 	body       []byte
+}
+
+type PackageMessage struct {
+	Package
+	proto.Message
 }
 
 const PackageDefaultHeadLen = 2 + 4 + 4 + 4 + 2 + 4 + 2 // packageLen（2） + cmd（4）+ sendTimer（4）+traceId（4）+ sid（2）+ seq(4) + bodyLen（2）
