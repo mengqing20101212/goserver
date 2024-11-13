@@ -8,7 +8,7 @@ import (
 func CreateProtoRequestMessage(cmd int32) (msg proto.Message) {
 	switch cmd {
 
-	case int32(CMD_cmd_login):
+	case int32(CMD_login):
 		return &CsLogin{}
 
 	default:
@@ -21,7 +21,7 @@ func CreateProtoRequestMessage(cmd int32) (msg proto.Message) {
 func CreateProtoResponseMessage(cmd int32) (msg proto.Message) {
 	switch cmd {
 
-	case int32(CMD_cmd_login):
+	case int32(CMD_login):
 		return &ScLogin{}
 
 	default:

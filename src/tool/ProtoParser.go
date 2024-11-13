@@ -20,8 +20,8 @@ var lock = sync.Mutex{}
 
 type FiledProto struct {
 	filedType string
-	filedName string
-	value     string
+	filedName string //协议名称
+	msgId     string //cmd 消息号
 }
 
 type MsgProto struct {
@@ -33,7 +33,7 @@ const (
 	enum = iota
 )
 
-func main2() {
+func main() {
 	fmt.Println("start parse proto buffer")
 	pbDir, _ = os.Getwd()
 	loadProtoFiles(pbDir)
@@ -47,7 +47,7 @@ func createGoHandlerFile() {
 	for key, val := range fileProtoMap {
 		if key == "CMD" {
 			for _, filed := range val.filedList {
-				intVal, err := strconv.Atoi(strings.TrimSpace(filed.value))
+				intVal, err := strconv.Atoi(strings.TrimSpace(filed.msgId))
 				if err != nil {
 					fmt.Println(err)
 				}
@@ -56,19 +56,28 @@ func createGoHandlerFile() {
 		}
 	}
 
-	cmdHandler := make(map[int]string)
+	type handleType map[int]string
+	cmdCsHandler := make(handleType)
+	cmdScHandler := make(handleType)
+	handleData := [2]handleType{cmdScHandler, cmdScHandler}
 	for key, _ := range fileProtoMap {
 		if key[:2] == "cs" {
 			handler := strings.ToLower(key[2:])
 			cmd := cmdMap[handler]
 			if cmd != 0 {
-				cmdHandler[cmd] = key[2:]
+				cmdCsHandler[cmd] = key[2:]
+			}
+		} else if key[:2] == "sc" {
+			handler := strings.ToLower(key[2:])
+			cmd := cmdMap[handler]
+			if cmd != 0 {
+				cmdScHandler[cmd] = key[2:]
 			}
 		}
 	}
 
-	if len(cmdHandler) <= 0 {
-		fmt.Println("len(cmdHandler) <= 0 fileProtoMap：", fileProtoMap)
+	if len(cmdCsHandler) <= 0 {
+		fmt.Println("len(cmdCsHandler) <= 0 fileProtoMap：", fileProtoMap)
 		return
 	}
 
@@ -84,7 +93,7 @@ func createGoHandlerFile() {
 	}
 
 	var buf bytes.Buffer
-	err = tmpl.Execute(&buf, cmdHandler)
+	err = tmpl.Execute(&buf, handleData)
 	if err != nil {
 		fmt.Println("mapTemplate Execute error :", err)
 	}
@@ -99,6 +108,7 @@ func createGoHandlerFile() {
 		return
 	}
 	fs.Write(buf.Bytes())
+	fmt.Println("create MsgCreateFactory.go 文件")
 }
 
 func loadProtoFiles(pbDir string) {
@@ -116,7 +126,7 @@ func loadProtoFiles(pbDir string) {
 
 	waitNum := 0
 	fileList := make([]string, 0)
-	//cmdFileName := ""
+	cmdFileName := ""
 	for _, file := range files {
 		fileStat, err := os.Stat(file)
 		i++
@@ -136,14 +146,14 @@ func loadProtoFiles(pbDir string) {
 			fileNameOnly := strings.TrimSuffix(fileStat.Name(), fileType)
 			waitNum++
 			if fileNameOnly == "Cmd" {
-				//cmdFileName = file
+				cmdFileName = file
 			} else {
 				fileList = append(fileList, file)
 			}
 		}
 	}
 	wg.Add(waitNum)
-	//go parseCmdFile(cmdFileName, &wg)
+	go parseCmdFile(cmdFileName, &wg)
 	for _, file := range fileList {
 		go parseNormalFile(file, &wg)
 	}
@@ -210,7 +220,7 @@ func parseNormalFile(name string, wg *sync.WaitGroup) {
 			filed := FiledProto{
 				filedType: fileType,
 				filedName: fileName,
-				value:     ss[1],
+				msgId:     ss[1],
 			}
 			msgProto.filedList = append(msgProto.filedList, filed)
 		}
@@ -270,8 +280,8 @@ func parseCmdFile(name string, wg *sync.WaitGroup) {
 			}
 			filed := FiledProto{
 				filedType: "enum",
-				filedName: ss[0][nameIndex+4:],
-				value:     ss[1],
+				filedName: ss[0][4:],
+				msgId:     ss[1],
 			}
 			msgProto.filedList = append(msgProto.filedList, filed)
 		}

@@ -7,12 +7,13 @@ import (
 
 func CreateProtoRequestMessage(cmd int32) (msg proto.Message) {
 	switch cmd {
-
-	 {{range $cmd, $message := .}}
+    {{range $index, $handler := .}}
+	 {{range $cmd, $message := $handler}}
     	 case int32({{$cmd}}):
          		return &protobuf.Cs{{$message}}{}
             {{end}}
     	}
+    {{end}}
 
 	default:
 		fmt.Println("CreateProtoRequestMessage not found cmdId:", cmd)
@@ -23,12 +24,13 @@ func CreateProtoRequestMessage(cmd int32) (msg proto.Message) {
 
 func CreateProtoResponseMessage(cmd int32) (msg proto.Message) {
 	switch cmd {
-
- {{range $cmd, $message := .}}
+  {{range $index, $handler := .}}
+	 {{range $cmd, $message := $handler}}
     	 case int32({{$cmd}}):
          		return &protobuf.Sc{{$message}}{}
             {{end}}
     	}
+    {{end}}
 
 	default:
 		fmt.Println("CreateProtoResponseMessage not found cmdId:", cmd)

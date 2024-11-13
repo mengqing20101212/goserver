@@ -32,7 +32,7 @@ type TableMsgProto struct {
 	FileName  string
 }
 
-func main() {
+func main2() {
 	fmt.Println("start parse table buffer")
 	args := os.Args
 	if len(args) > 1 {
