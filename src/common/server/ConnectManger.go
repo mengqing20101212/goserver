@@ -14,11 +14,54 @@ type ConnectManger struct {
 	lock    sync.Mutex
 }
 
+const maxReceivePackageMessageLen = 1024
+const maxSendPackageMessageLen = 10
+
+type MessageDataType int
+
+const (
+	packageMessage MessageDataType = iota //PackageMessage消息
+	message                               //protobuf 消息
+)
+
+type OptionData struct {
+	optType        MessageDataType
+	packageMessage *PackageMessage
+	message        proto.Message
+}
+
 type NetClient struct {
 	SocketChannel
 	lock            sync.Mutex
 	receiveMsgQueue chan *PackageMessage //收到远端的包
-	sendMsgQueue    chan *PackageMessage //待发送的远端的包
+	sendMsgQueue    chan proto.Message   //待发送的远端的包
+}
+
+func (this *NetClient) tick() {
+
+}
+func (this *NetClient) TickNet() {
+
+}
+
+func NewNetClient(channel SocketChannel) *NetClient {
+	netClient := &NetClient{
+		SocketChannel:   channel,
+		lock:            sync.Mutex{},
+		receiveMsgQueue: make(chan *PackageMessage, maxReceivePackageMessageLen),
+		sendMsgQueue:    make(chan proto.Message, maxSendPackageMessageLen),
+	}
+	return netClient
+}
+func (this *NetClient) AddReceiveMsg(packet *Package, msg proto.Message) {
+	packetMessage := &PackageMessage{
+		packet,
+		msg,
+	}
+	this.receiveMsgQueue <- packetMessage
+}
+func (this *NetClient) AddSendMsg(packet proto.Message) {
+	this.sendMsgQueue <- packet
 }
 
 // 从socket 读取数据 并分发到指定的client 处理
@@ -79,28 +122,28 @@ func loopReadData(channel *SocketChannel, server *Server, mgr *ConnectManger) {
 	}
 }
 
-func (self *ConnectManger) AddConn(channel *SocketChannel, server *Server) {
-	self.lock.Lock()
-	defer self.lock.Unlock()
-	if self.connMap[channel.cid] != nil {
+func (this *ConnectManger) AddConn(channel *SocketChannel, server *Server) {
+	this.lock.Lock()
+	defer this.lock.Unlock()
+	if this.connMap[channel.cid] != nil {
 		logger.Error(fmt.Sprintf("[ConnectManger] repeact add SocketChannel:%s", channel))
 		return
 	}
-	self.connMap[channel.cid] = channel
+	this.connMap[channel.cid] = channel
 	logger.Info(fmt.Sprintf("[ConnectManger] AddConn:%s", channel))
-	go loopReadData(channel, server, self)
+	go loopReadData(channel, server, this)
 }
 
-func (self *ConnectManger) DelConn(channel *SocketChannel) {
-	self.lock.Lock()
-	defer self.lock.Unlock()
-	delete(self.connMap, channel.cid)
+func (this *ConnectManger) DelConn(channel *SocketChannel) {
+	this.lock.Lock()
+	defer this.lock.Unlock()
+	delete(this.connMap, channel.cid)
 	logger.Info(fmt.Sprintf("[ConnectManger] delete SocketChannel:%s", channel))
 }
 
-func (self *ConnectManger) SendMsgToConn(cid uint16, sendData []byte) error {
-	channel := self.connMap[cid]
-	if channel != nil {
+func (this *ConnectManger) SendMsgToConn(cid uint16, sendData []byte) error {
+	channel := this.connMap[cid]
+	if channel == nil {
 		logger.Error(fmt.Sprintf("[SendMsgToConn] not found channel:%d", cid))
 		return errors.New("SendMsgToConn not found channel cid:" + string(cid))
 	}

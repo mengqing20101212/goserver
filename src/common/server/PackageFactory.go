@@ -23,7 +23,7 @@ type Package struct {
 }
 
 type PackageMessage struct {
-	Package
+	*Package
 	proto.Message
 }
 

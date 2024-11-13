@@ -313,22 +313,22 @@ func (ringBuf *RingBuffer) checkCanWrite(writeLen int, timeout time.Duration) {
 }
 
 func (ringBuf *RingBuffer) WriteBytes(bs []byte) bool {
-	len := len(bs)
-	ringBuf.checkCanWrite(len+2, time.Duration(-1))
-	ringBuf.writeVal(uint64(len), 2)
+	byteLen := len(bs)
+	ringBuf.checkCanWrite(byteLen+2, time.Duration(-1))
+	ringBuf.writeVal(uint64(byteLen), 2)
 	if ringBuf.writePos > ringBuf.readPos {
-		if ringBuf.capacity-ringBuf.writePos >= len {
+		if ringBuf.capacity-ringBuf.writePos >= byteLen {
 			copy(ringBuf.data[ringBuf.writePos:], bs)
-			ringBuf.writePos += len
+			ringBuf.writePos += byteLen
 		} else {
 			splitLen := ringBuf.capacity - ringBuf.writePos
 			copy(ringBuf.data[ringBuf.writePos:], bs[:splitLen])
 			copy(ringBuf.data[0:], bs[splitLen:])
-			ringBuf.writePos = len - splitLen
+			ringBuf.writePos = byteLen - splitLen
 		}
 	} else {
 		copy(ringBuf.data[ringBuf.writePos:], bs)
-		ringBuf.writePos += len
+		ringBuf.writePos += byteLen
 	}
 	return true
 }

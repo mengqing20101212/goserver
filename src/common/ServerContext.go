@@ -33,8 +33,9 @@ func (s ServerType) String() string {
 		return "SCENE"
 	case GM:
 		return "GM"
+	default:
+		panic("unhandled default case")
 	}
-	panic("unknown server type")
 }
 
 type ServerConfig struct {
