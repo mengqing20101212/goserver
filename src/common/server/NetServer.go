@@ -15,15 +15,17 @@ const DefaultInputLen = 1024 * 5
 // DefaultMaxConnectLen specifies the default maximum number of connections that can be managed.
 const DefaultMaxConnectLen = 1024
 
+var GeneralCodec = new(PackageFactory) //全局的编码解码器
+
 // TCP 服务端连接
 type Server struct {
-	port          int                //端口
-	proto         string             //协议类型 目前是 只支持 tcp
-	codecsProto   CodeProto[Package] //编码解码器
-	filterChain   *FilterChain       // filterChain represents a sequence of filters to process packages in the server.
-	listener      *net.TCPListener   // listener holds the TCP listener for accepting incoming connections.
-	ConnectManger *ConnectManger     // ConnectManger handles the management of active socket connections for the server.
-	connectNum    uint16             // connectNum indicates the number of active connections managed by the server.
+	port  int    //端口
+	proto string //协议类型 目前是 只支持 tcp
+
+	filterChain   *FilterChain     // filterChain represents a sequence of filters to process packages in the server.
+	listener      *net.TCPListener // listener holds the TCP listener for accepting incoming connections.
+	ConnectManger *ConnectManger   // ConnectManger handles the management of active socket connections for the server.
+	connectNum    uint16           // connectNum indicates the number of active connections managed by the server.
 }
 
 var log = logger.SystemLogger
@@ -46,7 +48,6 @@ func (self *Server) Start() {
 	log.Info("[Server] start begin")
 	self.filterChain.AddFilter(&Filter{})
 	self.filterChain.AddFilter(&IpFilter{})
-	self.codecsProto = &PackageFactory{}
 	ipaddr := net.TCPAddr{Port: self.port}
 	DefaultInitHandler()
 	lis, err := net.ListenTCP("tcp", &ipaddr)
@@ -83,8 +84,9 @@ func (self *Server) OnAccept(con net.Conn, cid uint16) {
 		con:      tcpConn,
 		inputMsg: utils.NewByteBufferByBuf(bytes.NewBuffer(make([]byte, DefaultInputLen))),
 	}
+	netClient := NewNetClient(sc)
 	sc.inputMsg.GetBuffer().Reset()
-	self.ConnectManger.AddConn(&sc, self)
+	self.ConnectManger.AddConn(netClient, self)
 }
 
 type SocketChannel struct {
@@ -92,7 +94,7 @@ type SocketChannel struct {
 	socketIp string           // socketIp is the IP address associated with the socket connection.
 	cid      uint16           // cid socket channel identifier
 	con      *net.TCPConn     // con represents the TCP connection associated with the SocketChannel.
-	inputMsg utils.ByteBuffer // inputMsg stores the incoming message data as a ByteBuffer.
+	inputMsg utils.ByteBuffer // inputMsg stores the incoming sendMessage data as a ByteBuffer.
 }
 
 func (e *SocketChannel) String() string {
@@ -110,7 +112,7 @@ func (self *SocketChannel) SendMsg(data []byte) {
 	}
 }
 
-func (self SocketChannel) IsConnect() bool {
+func (self *SocketChannel) IsConnect() bool {
 	return self.cid != 0
 }
 

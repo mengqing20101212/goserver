@@ -111,7 +111,7 @@ func RegisterNewServerCallBack(serverType string, newServerCallBack func(isAdd b
 			log.Info(fmt.Sprintln(" 上架节点,当前节点数量:", len(services)))
 			for _, v := range services {
 				log.Info(fmt.Sprintln("服务实例信息: ", v))
-				newServerCallBack(true, v)
+				newServerCallBack(v.Enable, v)
 			}
 		},
 	})
@@ -119,25 +119,7 @@ func RegisterNewServerCallBack(serverType string, newServerCallBack func(isAdd b
 		log.Error("订阅回调发生错误: " + err.Error())
 		return
 	}
-	err = (*NameClientPtr).Unsubscribe(&vo.SubscribeParam{
-		ServiceName: serverName,
-		GroupName:   serverType,
-		SubscribeCallback: func(services []model.Instance, err error) {
-			if err != nil {
-				log.Error("订阅回调发生错误: " + err.Error())
-				return
-			}
-			log.Info(fmt.Sprintln("下架节点,当前节点数量:", len(services)))
-			for _, v := range services {
-				log.Info(fmt.Sprintln("服务实例信息: ", v))
-				newServerCallBack(false, v)
-			}
-		},
-	})
-	if err != nil {
-		log.Error("订阅回调发生错误: " + err.Error())
-		return
-	}
+
 }
 
 func initConfig(serverId, serverType *string) *string {
