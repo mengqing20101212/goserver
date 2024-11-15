@@ -6,7 +6,7 @@ import (
 	"protobufMsg"
 )
 
-type HandleFunc func(msg *proto.Message, channel *SocketChannel) (res bool, responseMessage proto.Message)
+type HandleFunc func(msg proto.Message, channel NetClientInterface) (res bool, responseMessage proto.Message)
 
 // 初始化 指定模块 并注册所有的 msg handler 处理器
 type HandlerInterface interface {

@@ -17,7 +17,7 @@ const DefaultMaxConnectLen = 1024
 
 var GeneralCodec = new(PackageFactory) //全局的编码解码器
 type ServerInterface interface {
-	CreateNewClient(channel *SocketChannel) *NetClient
+	CreateNewClient(channel *SocketChannel) NetClientInterface
 }
 
 // TCP 服务端连接
@@ -45,7 +45,7 @@ func NewServer(port int) (server Server) {
 	return server
 }
 
-func (this *Server) CreateNewClient(channel *SocketChannel) *NetClient {
+func (this *Server) CreateNewClient(channel *SocketChannel) NetClientInterface {
 	return NewNetClient(channel)
 }
 
@@ -102,6 +102,10 @@ type SocketChannel struct {
 	cid      uint16           // cid socket channel identifier
 	con      *net.TCPConn     // con represents the TCP connection associated with the SocketChannel.
 	inputMsg utils.ByteBuffer // inputMsg stores the incoming sendMessage data as a ByteBuffer.
+}
+
+func (this *SocketChannel) GetCid() uint16 {
+	return this.cid
 }
 
 func (e *SocketChannel) String() string {

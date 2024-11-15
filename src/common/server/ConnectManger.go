@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"net"
 	"protobufMsg"
 	"sync"
 	"time"
@@ -30,10 +31,12 @@ type NetClientInterface interface {
 	IsRunning() bool
 	AddReceiveMsg(packet *Package, msg proto.Message)
 	AddSendMsg(cmd int32, msg proto.Message)
-	CloseNet(mgr *ConnectManger)
+	CloseNet(closeMsg string, mgr *ConnectManger)
 	SendMsg(data []byte)
 	TickNet()
 	HandleReceivePackageMessage(data *OptionData, mgr *ConnectManger) bool
+	GetCid() uint16
+	GetSocketChannel() *SocketChannel
 }
 
 // 待处理消息
@@ -59,6 +62,19 @@ func NewNetClient(channel *SocketChannel) *NetClient {
 	}
 }
 
+func (receiver *NetClient) GetSocketChannel() *SocketChannel {
+	return receiver.SocketChannel
+
+}
+
+func (this *NetClient) GetCid() uint16 {
+	return this.cid
+}
+
+func (this *NetClient) GetConn() *net.TCPConn {
+	return this.con
+}
+
 func (this *NetClient) SendMsg(data []byte) {
 	this.SocketChannel.SendMsg(data)
 }
@@ -68,8 +84,7 @@ func (this *NetClient) startRun(mgr *ConnectManger) {
 	for {
 		//检查当前socket
 		if !this.IsRunning() {
-			log.Info(fmt.Sprintf("NetClient [%s], colse ", this.endPoint.String()))
-			this.CloseNet(mgr)
+			this.CloseNet(fmt.Sprintf("NetClient [%s], colse ", this.endPoint.String()), mgr)
 			return
 		}
 
@@ -83,15 +98,14 @@ func (this *NetClient) startRun(mgr *ConnectManger) {
 			switch data.optType {
 
 			case receivePackageMessage: //收到远端传来的消息
-				if NetClientInterface(this).HandleReceivePackageMessage(data, mgr) {
+				if this.HandleReceivePackageMessage(data, mgr) {
 					return
 				}
 
 			case sendMessage: //其他的携程写入到 发送队列的消息
 				responseData, err := proto.Marshal(data.Message)
 				if err != nil {
-					logger.Error(fmt.Sprintf(" parse sendMessage response req:%s, response:%s,  error:%s", data.PackageMessage.Message.String(), data.Message.String(), err))
-					this.CloseNet(mgr)
+					this.CloseNet(fmt.Sprintf(" parse sendMessage response req:%s, response:%s,  error:%s", data.PackageMessage.Message.String(), data.Message.String(), err), mgr)
 					return
 				}
 				resPack := CreatePackage(data.sendCmdId, 0, uint32(time.Now().Unix()), this.cid, responseData)
@@ -105,15 +119,14 @@ func (this *NetClient) startRun(mgr *ConnectManger) {
 
 func (this *NetClient) HandleReceivePackageMessage(data *OptionData, mgr *ConnectManger) bool {
 	handler := CreateHandler(data.PackageMessage.Package)
-	returnFlag, response := handler(&data.PackageMessage.Message, this.SocketChannel)
+	returnFlag, response := handler(data.PackageMessage.Message, this)
 	if !returnFlag {
 		logger.Info(fmt.Sprintf(" package no result req:%s, pack:%s", data.Message.String(), data.PackageMessage.Package.String()))
 		return true
 	}
 	responseData, err := proto.Marshal(response)
 	if err != nil {
-		logger.Error(fmt.Sprintf(" parse receivePackageMessage response req:%s, response:%s, pack:%s, error:%s", data.PackageMessage.Message.String(), response, data.PackageMessage.Package.String(), err))
-		this.CloseNet(mgr)
+		this.CloseNet(fmt.Sprintf(" parse receivePackageMessage response req:%s, response:%s, pack:%s, error:%s", data.PackageMessage.Message.String(), response, data.PackageMessage.Package.String(), err), mgr)
 		return true
 	}
 	resPack := CreatePackage(data.PackageMessage.Cmd, data.PackageMessage.TraceId, data.PackageMessage.SendTimer, data.PackageMessage.Sid, responseData)
@@ -121,10 +134,11 @@ func (this *NetClient) HandleReceivePackageMessage(data *OptionData, mgr *Connec
 	return false
 }
 
-func (this *NetClient) CloseNet(mgr *ConnectManger) {
+func (this *NetClient) CloseNet(closeMsg string, mgr *ConnectManger) {
 	this.msgList.Clear()
 	this.con.Close()
 	mgr.DelConn(this)
+	log.Info(closeMsg)
 }
 func (this *NetClient) IsRunning() bool {
 	return this.IsConnect()
@@ -179,25 +193,23 @@ func (this *ServerNetClient) HandleReceivePackageMessage(data *OptionData, mgr *
 }
 
 // 从socket 读取数据 并分发到指定的client 处理
-func loopReadData(channel *NetClient, server *Server, mgr *ConnectManger) {
+func loopReadData(channel NetClientInterface, server *Server, mgr *ConnectManger) {
 	for {
 		bs := make([]byte, 256)
-		n, err := channel.con.Read(bs)
+		n, err := channel.GetSocketChannel().inputMsg.GetBuffer().Read(bs)
 		if err != nil {
-			channel.Close(fmt.Sprintf("[lookupReadData] read data error:%s, channel:%s", err, channel))
-			server.ConnectManger.DelConn(channel)
+			channel.CloseNet(fmt.Sprintf("[lookupReadData] read data error:%s, channel:%s", err, channel), mgr)
 			return
 		}
 		if n <= 0 {
 			continue
 		}
-		channel.inputMsg.GetBuffer().Write(bs[:n])
+		channel.GetSocketChannel().inputMsg.GetBuffer().Write(bs[:n])
 		for {
-			pack, res := GeneralCodec.Decoder(&channel.inputMsg)
+			pack, res := GeneralCodec.Decoder(&channel.GetSocketChannel().inputMsg)
 			if res {
-				if !server.filterChain.Filter(pack, channel.SocketChannel) {
-					channel.Close(fmt.Sprintf("[lookupReadData]  close channel by Filter pack:%s, channel:%s", pack, channel))
-					server.ConnectManger.DelConn(channel)
+				if !server.filterChain.Filter(pack, channel.GetSocketChannel()) {
+					channel.CloseNet(fmt.Sprintf("[lookupReadData]  close channel by Filter pack:%s, channel:%s", pack, channel), mgr)
 					return
 				}
 			} else {
@@ -205,15 +217,14 @@ func loopReadData(channel *NetClient, server *Server, mgr *ConnectManger) {
 			}
 			reqMessage := protobufMsg.CreateProtoRequestMessage(pack.Cmd)
 			if reqMessage == nil {
-				logger.Error(fmt.Sprintf("Message not found pack:%s", pack))
-				mgr.DelConn(channel)
+				channel.CloseNet(fmt.Sprintf("Message not found pack:%s", pack), mgr)
 				return
 			}
 			reqMessage.Reset()
 			err = proto.UnmarshalMerge(pack.body, reqMessage)
 			if err != nil {
-				logger.Error(fmt.Sprintf("UnmarshalMerge pack:%s  error:%s", pack, err))
-				mgr.DelConn(channel)
+				logger.Error()
+				channel.CloseNet(fmt.Sprintf("UnmarshalMerge pack:%s  error:%s", pack, err), mgr)
 				return
 			}
 			channel.AddReceiveMsg(pack, reqMessage)
@@ -223,14 +234,14 @@ func loopReadData(channel *NetClient, server *Server, mgr *ConnectManger) {
 	}
 }
 
-func (this *ConnectManger) AddConn(channel *NetClient, server *Server) {
+func (this *ConnectManger) AddConn(channel NetClientInterface, server *Server) {
 	this.lock.Lock()
 	defer this.lock.Unlock()
-	if this.connMap[channel.cid] != nil {
+	if this.connMap[channel.GetCid()] != nil {
 		logger.Error(fmt.Sprintf("[ConnectManger] repeact add SocketChannel:%s", channel))
 		return
 	}
-	this.connMap[channel.cid] = channel
+	this.connMap[channel.GetCid()] = channel
 	logger.Info(fmt.Sprintf("[ConnectManger] AddConn:%s", channel))
 	go loopReadData(channel, server, this)
 }

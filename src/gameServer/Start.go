@@ -1,4 +1,4 @@
-package main
+package gameServer
 
 func main() {
 	gameServer := GameServer{}

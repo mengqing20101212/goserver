@@ -1,9 +1,10 @@
-package main
+package gameServer
 
 import (
 	"common"
 	"fmt"
 	gameServer "gameServer/login"
+	gameServer2 "gameServer/player"
 	"github.com/golang/protobuf/proto"
 	"logger"
 	"server"
@@ -15,11 +16,11 @@ type GameServer struct {
 	server.Server
 }
 
-func (this *GameServer) CreateNewClient(channel *server.SocketChannel) *server.NetClient {
+func (this *GameServer) CreateNewClient(channel *server.SocketChannel) server.NetClientInterface {
 	gameClient := &GameClient{
 		NetClient: *server.NewNetClient(channel),
 	}
-	return &gameClient.NetClient
+	return gameClient
 }
 
 type GameClient struct {
@@ -32,15 +33,14 @@ func (this *GameClient) TickNet() {
 }
 func (this *GameClient) HandleReceivePackageMessage(data *server.OptionData, mgr *server.ConnectManger) bool {
 	handler := server.CreateHandler(data.PackageMessage.Package)
-	returnFlag, response := handler(&data.PackageMessage.Message, this.SocketChannel)
+	returnFlag, response := handler(data.PackageMessage.Message, this)
 	if !returnFlag {
 		gameLogger.Info(fmt.Sprintf(" package no result req:%s, pack:%s", data.Message.String(), data.PackageMessage.Package.String()))
 		return true
 	}
 	responseData, err := proto.Marshal(response)
 	if err != nil {
-		gameLogger.Error(fmt.Sprintf(" parse receivePackageMessage response req:%s, response:%s, pack:%s, error:%s", data.PackageMessage.Message.String(), response, data.PackageMessage.Package.String(), err))
-		this.CloseNet(mgr)
+		this.CloseNet(fmt.Sprintf(" parse receivePackageMessage response req:%s, response:%s, pack:%s, error:%s", data.PackageMessage.Message.String(), response, data.PackageMessage.Package.String(), err), mgr)
 		return true
 	}
 	resPack := server.CreatePackage(data.PackageMessage.Cmd, data.PackageMessage.TraceId, data.PackageMessage.SendTimer, data.PackageMessage.Sid, responseData)
@@ -49,6 +49,7 @@ func (this *GameClient) HandleReceivePackageMessage(data *server.OptionData, mgr
 }
 
 var GameServerInstance GameServer
+var PlayerManger = gameServer2.NewPlayerManager()
 
 func (this *GameServer) StartServer(serverId, env string) {
 
