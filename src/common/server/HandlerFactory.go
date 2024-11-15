@@ -17,11 +17,11 @@ type HandlerInterface interface {
 var handlerMap = make(map[int32]HandleFunc)
 
 func CreateHandler(pack *Package) HandleFunc {
-	handler := handlerMap[pack.cmd]
+	handler := handlerMap[pack.Cmd]
 	if handler != nil {
 		return handler
 	}
-	log.Error(fmt.Sprintf(" not found msg Handler cmd:%d, pack:%s", pack.cmd, pack))
+	log.Error(fmt.Sprintf(" not found msg Handler cmd:%d, pack:%s", pack.Cmd, pack))
 	return nil
 }
 

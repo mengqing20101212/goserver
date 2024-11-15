@@ -16,6 +16,9 @@ const DefaultInputLen = 1024 * 5
 const DefaultMaxConnectLen = 1024
 
 var GeneralCodec = new(PackageFactory) //全局的编码解码器
+type ServerInterface interface {
+	CreateNewClient(channel *SocketChannel) *NetClient
+}
 
 // TCP 服务端连接
 type Server struct {
@@ -31,8 +34,8 @@ type Server struct {
 var log = logger.SystemLogger
 
 // NewServer initializes and returns a new Server instance with the specified port.
-func NewServer(port int) (server *Server) {
-	server = &Server{
+func NewServer(port int) (server Server) {
+	server = Server{
 		port:          port,
 		proto:         "tcp",
 		filterChain:   &FilterChain{},
@@ -40,6 +43,10 @@ func NewServer(port int) (server *Server) {
 		connectNum:    1,
 	}
 	return server
+}
+
+func (this *Server) CreateNewClient(channel *SocketChannel) *NetClient {
+	return NewNetClient(channel)
 }
 
 // Start initializes the server, sets up the filter chain, starts listening on the specified port,
@@ -84,7 +91,7 @@ func (self *Server) OnAccept(con net.Conn, cid uint16) {
 		con:      tcpConn,
 		inputMsg: utils.NewByteBufferByBuf(bytes.NewBuffer(make([]byte, DefaultInputLen))),
 	}
-	netClient := NewNetClient(sc)
+	netClient := ServerInterface(self).CreateNewClient(&sc)
 	sc.inputMsg.GetBuffer().Reset()
 	self.ConnectManger.AddConn(netClient, self)
 }

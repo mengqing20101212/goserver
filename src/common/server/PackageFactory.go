@@ -13,10 +13,10 @@ type CodeProto[T Package] interface {
 
 type Package struct {
 	packageLen uint16
-	cmd        int32
-	sendTimer  uint32
-	traceId    int32
-	sid        uint16
+	Cmd        int32
+	SendTimer  uint32
+	TraceId    int32
+	Sid        uint16
 	seq        uint32
 	bodyLen    uint16
 	body       []byte
@@ -58,17 +58,17 @@ func (self *PackageFactory) Decoder(buf *utils.ByteBuffer) (packageMsg *Package,
 func (self *PackageFactory) Encode(msg *Package) (packData []byte) {
 	packBuf := utils.NewByteBuffer()
 	packBuf.WriteUint16(msg.packageLen)
-	packBuf.WriteInt32(msg.cmd)
-	packBuf.WriteUint32(msg.sendTimer)
-	packBuf.WriteInt32(msg.traceId)
-	packBuf.WriteUint16(msg.sid)
+	packBuf.WriteInt32(msg.Cmd)
+	packBuf.WriteUint32(msg.SendTimer)
+	packBuf.WriteInt32(msg.TraceId)
+	packBuf.WriteUint16(msg.Sid)
 	packBuf.WriteUint16(msg.bodyLen)
 	packBuf.WriteInt32(int32(msg.seq))
 	packBuf.WriteBytes(msg.body)
 	return packBuf.GetBytes()
 }
 func CreatePackage(cmd int32, traceId int32, sendTimer uint32, sid uint16, body []byte) (packData *Package) {
-	pack := Package{cmd: cmd, sendTimer: sendTimer, sid: sid, body: body, bodyLen: uint16(len(body)), traceId: traceId}
+	pack := Package{Cmd: cmd, SendTimer: sendTimer, Sid: sid, body: body, bodyLen: uint16(len(body)), TraceId: traceId}
 	pack.packageLen = PackageDefaultHeadLen + pack.bodyLen
 	if log.IsDebug() {
 		log.Debug(fmt.Sprintf("new package:%s", pack.String()))
@@ -76,5 +76,5 @@ func CreatePackage(cmd int32, traceId int32, sendTimer uint32, sid uint16, body 
 	return &pack
 }
 func (self *Package) String() string {
-	return fmt.Sprintf("{packageLen:%d,cmd:%d,sendTimer:%d,traceId:%d,sid:%d,bodyLen:%d,body:%s}", self.packageLen, self.cmd, self.sendTimer, self.traceId, self.sid, self.bodyLen, self.body)
+	return fmt.Sprintf("{packageLen:%d,cmd:%d,sendTimer:%d,traceId:%d,sid:%d,bodyLen:%d,body:%s}", self.packageLen, self.Cmd, self.SendTimer, self.TraceId, self.Sid, self.bodyLen, self.body)
 }

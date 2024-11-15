@@ -29,7 +29,7 @@ func TestConnecter(t *testing.T) {
 				Male: i%2 == 1,
 			}
 			for {
-				flag, responsePack := sc.SendMsgData(int32(protobufMsg.CMD_cmd_login), &req)
+				flag, responsePack := sc.SendMsgData(int32(protobufMsg.CMD_login), &req)
 				if flag {
 					response := protobufMsg.ScLogin{}
 					proto.Unmarshal(responsePack.body, &response)

@@ -47,8 +47,8 @@ func (this *Connector) SendMsgData(cmd int32, msg proto.Message) (flag bool, res
 	if readLen > 0 {
 		responsePack, unpackFlag := this.protoCode.Decoder(&this.inputMsg)
 		if unpackFlag {
-			if responsePack.sid > 0 && this.cid == 0 {
-				this.cid = responsePack.sid
+			if responsePack.Sid > 0 && this.cid == 0 {
+				this.cid = responsePack.Sid
 				log.Info(fmt.Sprintf("set new sid:%d, endPoint:%s", this.cid, this.endPoint.String()))
 			}
 			return true, responsePack

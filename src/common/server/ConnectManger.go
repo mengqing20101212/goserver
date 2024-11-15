@@ -12,7 +12,7 @@ import (
 )
 
 type ConnectManger struct {
-	connMap map[uint16]*NetClient
+	connMap map[uint16]NetClientInterface
 	lock    sync.Mutex
 }
 
@@ -26,23 +26,41 @@ const (
 	sendMessage                                  //protobuf 消息
 )
 
-type NetStateCheck interface {
+type NetClientInterface interface {
 	IsRunning() bool
+	AddReceiveMsg(packet *Package, msg proto.Message)
+	AddSendMsg(cmd int32, msg proto.Message)
+	CloseNet(mgr *ConnectManger)
+	SendMsg(data []byte)
+	TickNet()
+	HandleReceivePackageMessage(data *OptionData, mgr *ConnectManger) bool
 }
 
 // 待处理消息
 type OptionData struct {
 	optType        MessageDataType
-	packageMessage *PackageMessage
-	message        proto.Message //发送的消息
+	PackageMessage *PackageMessage
+	Message        proto.Message //发送的消息
 	sendCmdId      int32         //发送的消息号
 }
 
 type NetClient struct {
-	SocketChannel
+	*SocketChannel
 	lock    sync.Mutex
 	msgList utils.List[*OptionData] //需要处理的包
 	start   bool
+}
+
+func NewNetClient(channel *SocketChannel) *NetClient {
+	return &NetClient{
+		SocketChannel: channel,
+		msgList:       utils.NewList[*OptionData](),
+		start:         false,
+	}
+}
+
+func (this *NetClient) SendMsg(data []byte) {
+	this.SocketChannel.SendMsg(data)
 }
 
 func (this *NetClient) startRun(mgr *ConnectManger) {
@@ -65,25 +83,14 @@ func (this *NetClient) startRun(mgr *ConnectManger) {
 			switch data.optType {
 
 			case receivePackageMessage: //收到远端传来的消息
-				handler := CreateHandler(data.packageMessage.Package)
-				returnFlag, response := handler(&data.packageMessage.Message, &this.SocketChannel)
-				if !returnFlag {
-					logger.Info(fmt.Sprintf(" package no result req:%s, pack:%s", data.message.String(), data.packageMessage.Package.String()))
+				if NetClientInterface(this).HandleReceivePackageMessage(data, mgr) {
 					return
 				}
-				responseData, err := proto.Marshal(response)
-				if err != nil {
-					logger.Error(fmt.Sprintf(" parse receivePackageMessage response req:%s, response:%s, pack:%s, error:%s", data.packageMessage.Message.String(), response, data.packageMessage.Package.String(), err))
-					this.CloseNet(mgr)
-					return
-				}
-				resPack := CreatePackage(data.packageMessage.cmd, data.packageMessage.traceId, data.packageMessage.sendTimer, data.packageMessage.sid, responseData)
-				this.SocketChannel.SendMsg(GeneralCodec.Encode(resPack))
 
 			case sendMessage: //其他的携程写入到 发送队列的消息
-				responseData, err := proto.Marshal(data.message)
+				responseData, err := proto.Marshal(data.Message)
 				if err != nil {
-					logger.Error(fmt.Sprintf(" parse sendMessage response req:%s, response:%s,  error:%s", data.packageMessage.Message.String(), data.message.String(), err))
+					logger.Error(fmt.Sprintf(" parse sendMessage response req:%s, response:%s,  error:%s", data.PackageMessage.Message.String(), data.Message.String(), err))
 					this.CloseNet(mgr)
 					return
 				}
@@ -94,6 +101,24 @@ func (this *NetClient) startRun(mgr *ConnectManger) {
 		//休息一下
 		time.Sleep(time.Duration(tickSleepTimer))
 	}
+}
+
+func (this *NetClient) HandleReceivePackageMessage(data *OptionData, mgr *ConnectManger) bool {
+	handler := CreateHandler(data.PackageMessage.Package)
+	returnFlag, response := handler(&data.PackageMessage.Message, this.SocketChannel)
+	if !returnFlag {
+		logger.Info(fmt.Sprintf(" package no result req:%s, pack:%s", data.Message.String(), data.PackageMessage.Package.String()))
+		return true
+	}
+	responseData, err := proto.Marshal(response)
+	if err != nil {
+		logger.Error(fmt.Sprintf(" parse receivePackageMessage response req:%s, response:%s, pack:%s, error:%s", data.PackageMessage.Message.String(), response, data.PackageMessage.Package.String(), err))
+		this.CloseNet(mgr)
+		return true
+	}
+	resPack := CreatePackage(data.PackageMessage.Cmd, data.PackageMessage.TraceId, data.PackageMessage.SendTimer, data.PackageMessage.Sid, responseData)
+	this.SocketChannel.SendMsg(GeneralCodec.Encode(resPack))
+	return false
 }
 
 func (this *NetClient) CloseNet(mgr *ConnectManger) {
@@ -108,14 +133,6 @@ func (this *NetClient) TickNet() {
 
 }
 
-func NewNetClient(channel SocketChannel) *NetClient {
-	netClient := &NetClient{
-		SocketChannel: channel,
-		lock:          sync.Mutex{},
-		msgList:       utils.NewList[*OptionData](),
-	}
-	return netClient
-}
 func (this *NetClient) AddReceiveMsg(packet *Package, msg proto.Message) {
 	packetMessage := &PackageMessage{
 		packet,
@@ -123,7 +140,7 @@ func (this *NetClient) AddReceiveMsg(packet *Package, msg proto.Message) {
 	}
 	data := &OptionData{
 		optType:        receivePackageMessage,
-		packageMessage: packetMessage,
+		PackageMessage: packetMessage,
 	}
 	this.lock.Lock()
 	defer this.lock.Unlock()
@@ -137,7 +154,7 @@ func (this *NetClient) AddReceiveMsg(packet *Package, msg proto.Message) {
 func (this *NetClient) AddSendMsg(cmd int32, msg proto.Message) {
 	data := &OptionData{
 		optType:   sendMessage,
-		message:   msg,
+		Message:   msg,
 		sendCmdId: cmd,
 	}
 	this.lock.Lock()
@@ -151,6 +168,14 @@ func (this *NetClient) AddSendMsg(cmd int32, msg proto.Message) {
 
 func (this *NetClient) isStart() bool {
 	return this.start
+}
+
+type ServerNetClient struct {
+	NetClient
+}
+
+func (this *ServerNetClient) HandleReceivePackageMessage(data *OptionData, mgr *ConnectManger) bool {
+	return true
 }
 
 // 从socket 读取数据 并分发到指定的client 处理
@@ -170,7 +195,7 @@ func loopReadData(channel *NetClient, server *Server, mgr *ConnectManger) {
 		for {
 			pack, res := GeneralCodec.Decoder(&channel.inputMsg)
 			if res {
-				if !server.filterChain.Filter(pack, &channel.SocketChannel) {
+				if !server.filterChain.Filter(pack, channel.SocketChannel) {
 					channel.Close(fmt.Sprintf("[lookupReadData]  close channel by Filter pack:%s, channel:%s", pack, channel))
 					server.ConnectManger.DelConn(channel)
 					return
@@ -178,7 +203,7 @@ func loopReadData(channel *NetClient, server *Server, mgr *ConnectManger) {
 			} else {
 				break
 			}
-			reqMessage := protobufMsg.CreateProtoRequestMessage(pack.cmd)
+			reqMessage := protobufMsg.CreateProtoRequestMessage(pack.Cmd)
 			if reqMessage == nil {
 				logger.Error(fmt.Sprintf("Message not found pack:%s", pack))
 				mgr.DelConn(channel)
@@ -192,9 +217,7 @@ func loopReadData(channel *NetClient, server *Server, mgr *ConnectManger) {
 				return
 			}
 			channel.AddReceiveMsg(pack, reqMessage)
-			if !channel.isStart() {
-				channel.startRun(mgr)
-			}
+
 		}
 
 	}
@@ -231,7 +254,7 @@ func (this *ConnectManger) SendMsgToConn(cid uint16, sendData []byte) error {
 
 func NewConnectManger(maxConLen int) (mgr *ConnectManger) {
 	manger := ConnectManger{
-		connMap: make(map[uint16]*NetClient, maxConLen),
+		connMap: make(map[uint16]NetClientInterface, maxConLen),
 	}
 	return &manger
 }
