@@ -13,15 +13,16 @@ import (
 	"text/template"
 )
 
+// var pbDir = "D:\\WORK\\me\\gameProject\\proto"
 var pbDir = ""
 
 var fileProtoMap = make(map[string]MsgProto)
 var lock = sync.Mutex{}
 
 type FiledProto struct {
-	filedType string
-	filedName string //协议名称
-	msgId     string //cmd 消息号
+	filedType string // 数据类型
+	filedName string // 字段名
+	index     string // 字段的排序
 }
 
 type MsgProto struct {
@@ -35,9 +36,10 @@ const (
 
 func main() {
 	fmt.Println("start parse proto buffer")
-	pbDir, _ = os.Getwd()
+	if pbDir == "" {
+		pbDir, _ = os.Getwd()
+	}
 	loadProtoFiles(pbDir)
-	fmt.Println(fileProtoMap)
 	createGoHandlerFile()
 	fmt.Println("end parse proto buffer")
 }
@@ -47,7 +49,7 @@ func createGoHandlerFile() {
 	for key, val := range fileProtoMap {
 		if key == "CMD" {
 			for _, filed := range val.filedList {
-				intVal, err := strconv.Atoi(strings.TrimSpace(filed.msgId))
+				intVal, err := strconv.Atoi(strings.TrimSpace(filed.index))
 				if err != nil {
 					fmt.Println(err)
 				}
@@ -61,14 +63,17 @@ func createGoHandlerFile() {
 	cmdScHandler := make(handleType)
 	handleData := [2]handleType{cmdScHandler, cmdScHandler}
 	for key, _ := range fileProtoMap {
+		if key == "" || len(key) <= 2 {
+			continue
+		}
 		if key[:2] == "cs" {
-			handler := strings.ToLower(key[2:])
+			handler := key[2:]
 			cmd := cmdMap[handler]
 			if cmd != 0 {
 				cmdCsHandler[cmd] = key[2:]
 			}
 		} else if key[:2] == "sc" {
-			handler := strings.ToLower(key[2:])
+			handler := key[2:]
 			cmd := cmdMap[handler]
 			if cmd != 0 {
 				cmdScHandler[cmd] = key[2:]
@@ -97,9 +102,10 @@ func createGoHandlerFile() {
 	if err != nil {
 		fmt.Println("mapTemplate Execute error :", err)
 	}
-	fmt.Println(buf.String())
-	outFile := "../src/common/server/MsgCreateFactory.go"
+	//fmt.Println(buf.String())
+	outFile := "../src/protobufMsg/MsgCreateFactory.go"
 	outFile = filepath.Join(pbDir, outFile)
+	fmt.Println("create MsgCreateFactory :", outFile)
 	os.Remove(outFile)
 	fs, err := os.OpenFile(outFile, os.O_RDWR|os.O_CREATE, 0755)
 	defer fs.Close()
@@ -161,10 +167,12 @@ func loadProtoFiles(pbDir string) {
 }
 
 func parseNormalFile(name string, wg *sync.WaitGroup) {
+
+	fmt.Println("parseNormalFile:", name)
 	fs, err := os.OpenFile(name, os.O_RDWR, 0755)
 	if err != nil {
 		fmt.Println("parseCmdFile error :", err, "name:", name)
-		os.Exit(1)
+		return
 	}
 	defer fs.Close()
 	defer wg.Done()
@@ -220,7 +228,7 @@ func parseNormalFile(name string, wg *sync.WaitGroup) {
 			filed := FiledProto{
 				filedType: fileType,
 				filedName: fileName,
-				msgId:     ss[1],
+				index:     ss[1],
 			}
 			msgProto.filedList = append(msgProto.filedList, filed)
 		}
@@ -273,15 +281,15 @@ func parseCmdFile(name string, wg *sync.WaitGroup) {
 				fmt.Println("error line: ", line, " ss.len != 2")
 				continue
 			}
-			nameIndex := strings.Index(ss[0], "cmd_")
+			/*nameIndex := strings.Index(ss[0], "cmd_")
 			if nameIndex < 0 {
 				fmt.Println("this cmd not found  prefix cmd_ ")
 				os.Exit(1)
-			}
+			}*/
 			filed := FiledProto{
 				filedType: "enum",
-				filedName: ss[0][4:],
-				msgId:     ss[1],
+				filedName: ss[0],
+				index:     ss[1],
 			}
 			msgProto.filedList = append(msgProto.filedList, filed)
 		}

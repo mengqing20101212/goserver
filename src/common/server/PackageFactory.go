@@ -19,7 +19,7 @@ type Package struct {
 	Sid        uint16 //会话id
 	seq        uint32 //序列号
 	bodyLen    uint16 //protobuf 长度
-	body       []byte //protobuf
+	Body       []byte //protobuf
 }
 
 type PackageMessage struct {
@@ -64,11 +64,11 @@ func (self *PackageFactory) Encode(msg *Package) (packData []byte) {
 	packBuf.WriteUint16(msg.Sid)
 	packBuf.WriteUint16(msg.bodyLen)
 	packBuf.WriteInt32(int32(msg.seq))
-	packBuf.WriteBytes(msg.body)
+	packBuf.WriteBytes(msg.Body)
 	return packBuf.GetBytes()
 }
 func CreatePackage(cmd int32, traceId int32, sendTimer uint32, sid uint16, body []byte) (packData *Package) {
-	pack := Package{Cmd: cmd, SendTimer: sendTimer, Sid: sid, body: body, bodyLen: uint16(len(body)), TraceId: traceId}
+	pack := Package{Cmd: cmd, SendTimer: sendTimer, Sid: sid, Body: body, bodyLen: uint16(len(body)), TraceId: traceId}
 	pack.packageLen = PackageDefaultHeadLen + pack.bodyLen
 	if log.IsDebug() {
 		log.Debug(fmt.Sprintf("new package:%s", pack.String()))
@@ -76,5 +76,5 @@ func CreatePackage(cmd int32, traceId int32, sendTimer uint32, sid uint16, body 
 	return &pack
 }
 func (self *Package) String() string {
-	return fmt.Sprintf("{packageLen:%d,cmd:%d,sendTimer:%d,traceId:%d,sid:%d,bodyLen:%d,body:%s}", self.packageLen, self.Cmd, self.SendTimer, self.TraceId, self.Sid, self.bodyLen, self.body)
+	return fmt.Sprintf("{packageLen:%d,cmd:%d,sendTimer:%d,traceId:%d,sid:%d,bodyLen:%d,body:%s}", self.packageLen, self.Cmd, self.SendTimer, self.TraceId, self.Sid, self.bodyLen, self.Body)
 }

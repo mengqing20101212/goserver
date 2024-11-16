@@ -4,7 +4,7 @@
 set "folderPath=..\protobuf\protobufMsg"
  xcopy  "%folderPath%\*"   ..\src\protobufMsg /E /I
 
-@REM ProtoParser
+ProtoParser
 
 REM Check if the folder exists
 if exist "%folderPath%" (

@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"sync"
 	"time"
@@ -33,4 +35,23 @@ func GetNowString() string {
 }
 func IsSameDay(t1, t2 int64) bool {
 	return time.UnixMilli(t1).Day() == time.UnixMilli(t2).Day()
+}
+
+// 结构体转换为 byte 数组
+func Struct2Bytes(data any) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(data)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// byte 数组转换为 结构体
+func Bytes2Struct(data []byte, result *any) error {
+	var buf bytes.Buffer
+	buf.Write(data)
+	dec := gob.NewDecoder(&buf)
+	return dec.Decode(result)
 }

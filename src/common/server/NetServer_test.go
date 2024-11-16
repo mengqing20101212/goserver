@@ -29,10 +29,10 @@ func TestConnecter(t *testing.T) {
 				Male: i%2 == 1,
 			}
 			for {
-				flag, responsePack := sc.SendMsgData(int32(protobufMsg.CMD_login), &req)
+				flag, responsePack := sc.SendMsgData(int32(protobufMsg.CMD_Login), &req, 1000)
 				if flag {
 					response := protobufMsg.ScLogin{}
-					proto.Unmarshal(responsePack.body, &response)
+					proto.Unmarshal(responsePack.Body, &response)
 					logger.Info(fmt.Sprintf("receive msg:%s ", response.String()))
 				}
 				time.Sleep(1 * time.Second)

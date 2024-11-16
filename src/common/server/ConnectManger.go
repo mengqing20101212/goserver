@@ -226,7 +226,7 @@ func loopReadData(channel NetClientInterface, server *Server, mgr *ConnectManger
 				return
 			}
 			reqMessage.Reset()
-			err = proto.UnmarshalMerge(pack.body, reqMessage)
+			err = proto.UnmarshalMerge(pack.Body, reqMessage)
 			if err != nil {
 				logger.Error()
 				channel.CloseNet(fmt.Sprintf("UnmarshalMerge pack:%s  error:%s", pack, err), mgr)

@@ -15,3 +15,11 @@ message csServer2Server
   int32 cmd = 2;    //protobufMsg 则为 消息号 ；  structMsg 则为 结构体定义的枚举号
   bytes data = 3;
 }
+
+// 服务器间通信协议
+message scServer2Server
+{
+  ServerMsgType  type = 1;
+  int32 cmd = 2;    //protobufMsg 则为 消息号 ；  structMsg 则为 结构体定义的枚举号
+  bytes data = 3;
+}
