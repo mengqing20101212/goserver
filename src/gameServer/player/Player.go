@@ -1,31 +1,49 @@
 package gameServer
 
 import (
+	"common/utils"
 	"gameServer"
 	"server"
 	"sync"
+	"time"
 )
 
+// game player client 心跳间隔 100 毫秒
+const GameMaxTickTimer = 100
+
 type Player struct {
-	Client   *gameServer.GameClient
-	PlayerId int64
-	Name     string
-	isStart  bool
-	lock     sync.Mutex
+	Client        *gameServer.GameClient
+	PlayerId      int64
+	Name          string
+	isStart       bool
+	lock          sync.Mutex
+	lastTickTimer int64 //上次心跳时间
 }
 
 func NewPlayer(playerId int64, client server.NetClientInterface) *Player {
 	gameClient := client.(*gameServer.GameClient)
-	return &Player{Client: gameClient, PlayerId: playerId}
+	return &Player{Client: gameClient, PlayerId: playerId, lastTickTimer: utils.GetNow()}
 }
 
+// StartRun 启动玩家逻辑 处理网络包 处理各种事件 100 毫秒心跳一次
 func (this *Player) StartRun() {
-	this.lock.Lock()
-	defer this.lock.Unlock()
 	if !this.isStart {
 		this.isStart = true
 	}
 	go func() {
+		for {
+			now := utils.GetNow()
+			//处理所有 网络包
+			this.Client.TickNet(gameServer.ServerInstance.ConnectManger)
 
+			//TODO 跨天检查
+			if !utils.IsSameDay(now, this.lastTickTimer) {
+				//  抛出跨天事件
+
+			}
+			//TODO 跨周检查
+			this.lastTickTimer = now
+			time.Sleep(GameMaxTickTimer * time.Millisecond)
+		}
 	}()
 }

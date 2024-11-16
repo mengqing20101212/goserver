@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"io"
 	"net"
 	"protobufMsg"
 	"sync"
@@ -19,6 +20,7 @@ type ConnectManger struct {
 
 const maxReceivePackageMessageLen = 1024
 const tickSleepTimer = 100 * time.Millisecond //心跳间隔 毫秒
+const maxCloseSocketTickTimer = 2 * 60 * 1000 //2分钟
 
 type MessageDataType int
 
@@ -33,10 +35,10 @@ type NetClientInterface interface {
 	AddSendMsg(cmd int32, msg proto.Message)
 	CloseNet(closeMsg string, mgr *ConnectManger)
 	SendMsg(data []byte)
-	TickNet()
 	HandleReceivePackageMessage(data *OptionData, mgr *ConnectManger) bool
 	GetCid() uint16
 	GetSocketChannel() *SocketChannel
+	CheckChannelStatus() bool // 监测连接状态 一般来说 2分钟未收到包 这边会把socket 关掉
 }
 
 // 待处理消息
@@ -49,9 +51,18 @@ type OptionData struct {
 
 type NetClient struct {
 	*SocketChannel
-	lock    sync.Mutex
-	msgList utils.List[*OptionData] //需要处理的包
-	start   bool
+	lock             sync.Mutex
+	msgList          utils.List[*OptionData] //需要处理的包
+	start            bool
+	lastReceiveTimer int64
+}
+
+func (this *NetClient) CheckChannelStatus() bool {
+	now := utils.GetNow()
+	if now-this.lastReceiveTimer > maxCloseSocketTickTimer {
+		return false
+	}
+	return true
 }
 
 func NewNetClient(channel *SocketChannel) *NetClient {
@@ -79,42 +90,36 @@ func (this *NetClient) SendMsg(data []byte) {
 	this.SocketChannel.SendMsg(data)
 }
 
-func (this *NetClient) startRun(mgr *ConnectManger) {
+// TickNet 处理当前接收到到的所有网络包 和 所有待发送的网络包
+func (this *NetClient) TickNet(mgr *ConnectManger) {
 	this.start = true
-	for {
-		//检查当前socket
-		if !this.IsRunning() {
-			this.CloseNet(fmt.Sprintf("NetClient [%s], colse ", this.endPoint.String()), mgr)
-			return
-		}
-
-		//处理子类消息
-		this.TickNet()
-
-		// 处理消息
-		this.msgList.ForEachAndClear(func(data *OptionData) {
-			this.lock.Lock()
-			defer this.lock.Unlock()
-			switch data.optType {
-
-			case receivePackageMessage: //收到远端传来的消息
-				if this.HandleReceivePackageMessage(data, mgr) {
-					return
-				}
-
-			case sendMessage: //其他的携程写入到 发送队列的消息
-				responseData, err := proto.Marshal(data.Message)
-				if err != nil {
-					this.CloseNet(fmt.Sprintf(" parse sendMessage response req:%s, response:%s,  error:%s", data.PackageMessage.Message.String(), data.Message.String(), err), mgr)
-					return
-				}
-				resPack := CreatePackage(data.sendCmdId, 0, uint32(time.Now().Unix()), this.cid, responseData)
-				this.SocketChannel.SendMsg(GeneralCodec.Encode(resPack))
-			}
-		})
-		//休息一下
-		time.Sleep(time.Duration(tickSleepTimer))
+	//检查当前socket
+	if !this.IsRunning() {
+		this.CloseNet(fmt.Sprintf("NetClient [%s], colse ", this.endPoint.String()), mgr)
+		return
 	}
+
+	// 处理消息
+	this.msgList.ForEachAndClear(func(data *OptionData) {
+		this.lock.Lock()
+		defer this.lock.Unlock()
+		switch data.optType {
+
+		case receivePackageMessage: //收到远端传来的消息
+			if NetClientInterface(this).HandleReceivePackageMessage(data, mgr) {
+				return
+			}
+
+		case sendMessage: //其他的携程写入到 发送队列的消息
+			responseData, err := proto.Marshal(data.Message)
+			if err != nil {
+				this.CloseNet(fmt.Sprintf(" parse sendMessage response req:%s, response:%s,  error:%s", data.PackageMessage.Message.String(), data.Message.String(), err), mgr)
+				return
+			}
+			resPack := CreatePackage(data.sendCmdId, 0, uint32(time.Now().Unix()), this.cid, responseData)
+			this.SocketChannel.SendMsg(GeneralCodec.Encode(resPack))
+		}
+	})
 }
 
 func (this *NetClient) HandleReceivePackageMessage(data *OptionData, mgr *ConnectManger) bool {
@@ -142,9 +147,6 @@ func (this *NetClient) CloseNet(closeMsg string, mgr *ConnectManger) {
 }
 func (this *NetClient) IsRunning() bool {
 	return this.IsConnect()
-}
-func (this *NetClient) TickNet() {
-
 }
 
 func (this *NetClient) AddReceiveMsg(packet *Package, msg proto.Message) {
@@ -196,13 +198,16 @@ func (this *ServerNetClient) HandleReceivePackageMessage(data *OptionData, mgr *
 func loopReadData(channel NetClientInterface, server *Server, mgr *ConnectManger) {
 	for {
 		bs := make([]byte, 256)
-		n, err := channel.GetSocketChannel().inputMsg.GetBuffer().Read(bs)
+		n, err := channel.GetSocketChannel().con.Read(bs)
 		if err != nil {
+			//没有更多的包可以读了
+			if err == io.EOF && !channel.CheckChannelStatus() {
+				//每隔 100毫秒检查一次socket 是否有包到来，有包 则继续处理 没包 则sleep
+				time.Sleep(tickSleepTimer)
+				continue
+			}
 			channel.CloseNet(fmt.Sprintf("[lookupReadData] read data error:%s, channel:%s", err, channel), mgr)
 			return
-		}
-		if n <= 0 {
-			continue
 		}
 		channel.GetSocketChannel().inputMsg.GetBuffer().Write(bs[:n])
 		for {
@@ -261,6 +266,15 @@ func (this *ConnectManger) SendMsgToConn(cid uint16, sendData []byte) error {
 	}
 	channel.SendMsg(sendData)
 	return nil
+}
+
+func (this *ConnectManger) CloseAllClient() {
+	this.lock.Lock()
+	defer this.lock.Unlock()
+	for _, channel := range this.connMap {
+		channel.CloseNet("closeAllClient", this)
+	}
+
 }
 
 func NewConnectManger(maxConLen int) (mgr *ConnectManger) {

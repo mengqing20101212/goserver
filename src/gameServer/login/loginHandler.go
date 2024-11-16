@@ -12,9 +12,9 @@ type LoginHandler struct {
 }
 
 func (receiver *LoginHandler) Initializer() {
-	server.InitHandler(int32(protobufMsg.CMD_login), login)
-	server.InitHandler(int32(protobufMsg.CMD_login3), login3)
-	server.InitHandler(int32(protobufMsg.CMD_login2), login2)
+	server.InitHandler(int32(protobufMsg.CMD_Login), login)
+	server.InitHandler(int32(protobufMsg.CMD_Login3), login3)
+	server.InitHandler(int32(protobufMsg.CMD_Login2), login2)
 }
 
 func (receiver *LoginHandler) HandleName() string {

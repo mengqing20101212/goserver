@@ -2,11 +2,12 @@ package gameServer
 
 import (
 	"common"
+	"common/utils"
 	"fmt"
 	gameServer "gameServer/login"
 	gameServer2 "gameServer/player"
-	"github.com/golang/protobuf/proto"
 	"logger"
+	"protobufMsg"
 	"server"
 )
 
@@ -18,37 +19,33 @@ type GameServer struct {
 
 func (this *GameServer) CreateNewClient(channel *server.SocketChannel) server.NetClientInterface {
 	gameClient := &GameClient{
-		NetClient: *server.NewNetClient(channel),
+		NetClient:     *server.NewNetClient(channel),
+		lastTickTimer: utils.GetNow(),
 	}
 	return gameClient
 }
 
 type GameClient struct {
 	server.NetClient
-	playerId int64
+	playerId      int64
+	lastTickTimer int64
 }
 
-func (this *GameClient) TickNet() {
-
-}
 func (this *GameClient) HandleReceivePackageMessage(data *server.OptionData, mgr *server.ConnectManger) bool {
-	handler := server.CreateHandler(data.PackageMessage.Package)
-	returnFlag, response := handler(data.PackageMessage.Message, this)
-	if !returnFlag {
-		gameLogger.Info(fmt.Sprintf(" package no result req:%s, pack:%s", data.Message.String(), data.PackageMessage.Package.String()))
+	cmd := data.PackageMessage.Cmd
+	if this.playerId == 0 {
+		if cmd != int32(protobufMsg.CMD_Login) { // 该玩家未登录 非法包
+			this.CloseNet(fmt.Sprintln(" 玩家未登录, 不接受其他的包 cmd: ", cmd, ", sid:", this.GetCid()), mgr)
+			return true
+		}
 		return true
+	} else {
+		this.NetClient.HandleReceivePackageMessage(data, mgr)
 	}
-	responseData, err := proto.Marshal(response)
-	if err != nil {
-		this.CloseNet(fmt.Sprintf(" parse receivePackageMessage response req:%s, response:%s, pack:%s, error:%s", data.PackageMessage.Message.String(), response, data.PackageMessage.Package.String(), err), mgr)
-		return true
-	}
-	resPack := server.CreatePackage(data.PackageMessage.Cmd, data.PackageMessage.TraceId, data.PackageMessage.SendTimer, data.PackageMessage.Sid, responseData)
-	this.SocketChannel.SendMsg(server.GeneralCodec.Encode(resPack))
 	return false
 }
 
-var GameServerInstance GameServer
+var ServerInstance GameServer
 var PlayerManger = gameServer2.NewPlayerManager()
 
 func (this *GameServer) StartServer(serverId, env string) {
@@ -57,8 +54,8 @@ func (this *GameServer) StartServer(serverId, env string) {
 	gameLogger = logger.Init(common.Context.Config.LogDir, "game")
 	this.InitHandler()
 	gameLogger.Info("GameServer InitContext success")
-	GameServerInstance.Server = server.NewServer(common.Context.Config.ServerPort)
-	GameServerInstance.Start()
+	ServerInstance.Server = server.NewServer(common.Context.Config.ServerPort)
+	ServerInstance.Start()
 	gameLogger.Info("GameServer StartServer success")
 
 }
@@ -73,5 +70,12 @@ func initHandler(handler server.HandlerInterface) {
 
 func (this *GameServer) StopServer() {
 	//TODO  保存数据库数据
+	this.Server.ConnectManger.CloseAllClient()
+	this.Server.Stop()
 	gameLogger.Info("GameServer StopServer success")
+}
+
+func GetConnectManger() *server.ConnectManger {
+	return ServerInstance.ConnectManger
+
 }

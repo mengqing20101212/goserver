@@ -96,6 +96,11 @@ func (self *Server) OnAccept(con net.Conn, cid uint16) {
 	self.ConnectManger.AddConn(netClient, self)
 }
 
+func (this *Server) Stop() {
+	this.listener.Close()
+
+}
+
 type SocketChannel struct {
 	endPoint net.Addr         // endPoint represents the network address of the remote connection for the SocketChannel.
 	socketIp string           // socketIp is the IP address associated with the socket connection.

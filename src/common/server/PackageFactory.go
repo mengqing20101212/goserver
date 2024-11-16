@@ -12,14 +12,14 @@ type CodeProto[T Package] interface {
 }
 
 type Package struct {
-	packageLen uint16
-	Cmd        int32
-	SendTimer  uint32
-	TraceId    int32
-	Sid        uint16
-	seq        uint32
-	bodyLen    uint16
-	body       []byte
+	packageLen uint16 //包长
+	Cmd        int32  //消息号
+	SendTimer  uint32 //发送时间戳
+	TraceId    int32  //追踪id
+	Sid        uint16 //会话id
+	seq        uint32 //序列号
+	bodyLen    uint16 //protobuf 长度
+	body       []byte //protobuf
 }
 
 type PackageMessage struct {

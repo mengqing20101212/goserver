@@ -1,0 +1,17 @@
+syntax = "proto3";
+option go_package = "protobuf/protobufMsg";
+
+// 服务器间通信协议负载消息的类型
+enum ServerMsgType
+{
+   protobufMsg = 0; // protobuf  消息
+    structMsg = 1; // go 结构体消息
+}
+
+// 服务器间通信协议
+message csServer2Server
+{
+  ServerMsgType  type = 1;
+  int32 cmd = 2;    //protobufMsg 则为 消息号 ；  structMsg 则为 结构体定义的枚举号
+  bytes data = 3;
+}
