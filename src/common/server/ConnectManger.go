@@ -190,10 +190,6 @@ type ServerNetClient struct {
 	NetClient
 }
 
-func (this *ServerNetClient) HandleReceivePackageMessage(data *OptionData, mgr *ConnectManger) bool {
-	return true
-}
-
 // 从socket 读取数据 并分发到指定的client 处理
 func loopReadData(channel NetClientInterface, server *Server, mgr *ConnectManger) {
 	for {
