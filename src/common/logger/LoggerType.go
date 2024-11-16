@@ -12,8 +12,8 @@ var RpcLogger *Logger
 
 func InitType(dir string) {
 	logDir = dir
-	SystemLogger = Init(logDir, "system")
-	NetLogger = Init(logDir, "net")
-	DbLogger = Init(logDir, "db")
-	RpcLogger = Init(logDir, "rpc")
+	SystemLogger = Init(logDir, "system.log")
+	NetLogger = Init(logDir, "net.log")
+	DbLogger = Init(logDir, "db.log")
+	RpcLogger = Init(logDir, "rpc.log")
 }
