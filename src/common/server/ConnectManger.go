@@ -9,6 +9,7 @@ import (
 	"io"
 	"net"
 	"protobufMsg"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -258,7 +259,7 @@ func (this *ConnectManger) SendMsgToConn(cid uint16, sendData []byte) error {
 	channel := this.connMap[cid]
 	if channel == nil {
 		logger.Error(fmt.Sprintf("[SendMsgToConn] not found channel:%d", cid))
-		return errors.New("SendMsgToConn not found channel cid:" + string(cid))
+		return errors.New("SendMsgToConn not found channel cid:" + strconv.Itoa(int(cid)))
 	}
 	channel.SendMsg(sendData)
 	return nil
