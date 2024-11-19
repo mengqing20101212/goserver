@@ -34,7 +34,7 @@ const (
 	enum = iota
 )
 
-func main() {
+func main2() {
 	fmt.Println("start parse proto buffer")
 	if pbDir == "" {
 		pbDir, _ = os.Getwd()

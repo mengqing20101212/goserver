@@ -15,12 +15,12 @@ if exist "%folderPath%" (
     echo Folder does not exist: %folderPath%
 )
 
-::@REM TableParser D:\WORK\me\goserver\proto\table
+TableParser
 echo %cd%
-set "tableDir=%cd%\..\table"
+set "tableDir=%cd%\..\src\table"
 cd /d "%tableDir%"
 dir
-@REM for /r %%i in (*Table.go) do (
-@REM     echo Formatting file: %%i
-@REM     go fmt "%%i"
-@REM )
+ for /r %%i in (*Table.go) do (
+     echo Formatting file: %%i
+     go fmt "%%i"
+ )

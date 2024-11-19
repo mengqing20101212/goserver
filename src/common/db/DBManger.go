@@ -14,30 +14,34 @@ type DBManger struct {
 	connectFlag bool
 }
 
-var log = logger.InitNull()
+var DbLogger = logger.DbLogger
 
 func (self *DBManger) IsConnectFlag() bool {
 	return self.connectFlag
 }
 
-func (self *DBManger) Execute(sql string, params any) bool {
+func (self *DBManger) Execute(sql string, params ...any) bool {
 	_, err := self.db.Exec(sql, params)
 	if err != nil {
 		self.connectFlag = false
-		log.Error(fmt.Sprintf("Execute sql error:%s, sql:%s, params:%s", err, sql, params))
+		DbLogger.Error(fmt.Sprintf("Execute sql error:%s, sql:%s, params:%s", err, sql, params))
 		return false
 	}
-	log.Info(fmt.Sprintf("sql:%s, params:%s", sql, params))
+	DbLogger.Info(fmt.Sprintf("sql:%s, params:%s", sql, params))
 	return true
+}
+
+func (this *DBManger) ExecuteSqlResult(sql string, data ...any) (sql.Result, error) {
+	return this.db.Exec(sql, data)
 }
 func (self *DBManger) ExecuteSql(sql string) bool {
 	_, err := self.db.Exec(sql)
 	if err != nil {
 		self.connectFlag = false
-		log.Error(fmt.Sprintf("Execute sql error:%s, sql:%s", err, sql))
+		DbLogger.Error(fmt.Sprintf("Execute sql error:%s, sql:%s", err, sql))
 		return false
 	}
-	log.Info(fmt.Sprintf("sql:%s", sql))
+	DbLogger.Info(fmt.Sprintf("sql:%s", sql))
 	return true
 }
 func (self *DBManger) Query(sqlStr string, params any, sqlOpt TableInterface) (bool, any) {
@@ -49,7 +53,7 @@ func (self *DBManger) Query(sqlStr string, params any, sqlOpt TableInterface) (b
 		rows, err = self.db.Query(sqlStr, params)
 	}
 	if err != nil {
-		log.Error(fmt.Sprintf("Query data error sqlStr:%s, params:%s, error:%s", sqlStr, params, err))
+		DbLogger.Error(fmt.Sprintf("Query data error sqlStr:%s, params:%s, error:%s", sqlStr, params, err))
 		return false, nil
 	}
 	defer rows.Close()
@@ -57,11 +61,11 @@ func (self *DBManger) Query(sqlStr string, params any, sqlOpt TableInterface) (b
 	return resultList != nil, resultList
 }
 
-func (self *DBManger) Insert(sql string, params any) bool {
+func (self *DBManger) Insert(sql string, params ...any) bool {
 	return self.Execute(sql, params)
 }
 
-func (self *DBManger) Update(sql string, params any) bool {
+func (self *DBManger) Update(sql string, params ...any) bool {
 	return self.Execute(sql, params)
 }
 func (self *DBManger) GetDB() *sqlx.DB {
@@ -84,13 +88,15 @@ func InitDataBase(manger *DBManger, userName, passWord, ip, databases string, po
 	err = database.Ping()
 	if err != nil {
 		database.Close()
-		log.Error(fmt.Sprintf(" InitDataBase Ping databases error err :%s, userName:%s, passWord:%s, ip:%s, databases:%s, port:%d, dbUrl:%s", err, userName, passWord, ip, database, port, dbUrl))
+		DbLogger.Error(fmt.Sprintf(" InitDataBase Ping databases error err :%s, userName:%s, passWord:%s, ip:%s, databases:%s, port:%d, dbUrl:%s", err, userName, passWord, ip, database, port, dbUrl))
 		return false
 	}
+	database.SetMaxIdleConns(10)
+	database.SetMaxOpenConns(10)
 	manger.dbUrl = dbUrl
 	manger.db = database
 	manger.connectFlag = true
-	log.Info(fmt.Sprintf("InitDataBase success dbUrl:%s", dbUrl))
+	DbLogger.Info(fmt.Sprintf("InitDataBase success dbUrl:%s", dbUrl))
 	return true
 }
 

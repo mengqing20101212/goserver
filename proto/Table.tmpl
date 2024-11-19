@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"goserver/common/db"
-	"goserver/common/logger"
+    "goserver/common/logger"
 	"unsafe"
 )
 
@@ -96,7 +96,7 @@ func (self *{{.FileName}}TableProxy) autoSaveData() {
 		saveFlag, err := self.Save(&self.{{.FileName}})
 		if err != nil {
 			self.changeFlag = true
-			logger.Error(fmt.Sprintf("autoSaveData save error :%s, data:%v ", err, self.{{.FileName}}))
+			logger.DbLogger.Error(fmt.Sprintf("autoSaveData save error :%s, data:%v ", err, self.{{.FileName}}))
 			return
 		}
 		if saveFlag {

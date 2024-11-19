@@ -19,7 +19,9 @@ var tablePbFiles = make([]string, 10)
 var tableFileProtoMap = make(map[string]TableMsgProto)
 
 type TableFiledProto struct {
-	FiledType          string
+	FiledType          string //Mysql 字段
+	FiledTypeLen       string //MySQL 字段的长度 有可能是 text
+	FileShowDesc       string //显示的注释
 	FiledName          string
 	Value              int
 	CamelCaseFiledName string
@@ -32,11 +34,13 @@ type TableMsgProto struct {
 	FileName  string
 }
 
-func main2() {
+func main() {
 	fmt.Println("start parse table buffer")
 	args := os.Args
 	if len(args) > 1 {
 		TablePbDir = args[1]
+	} else {
+		TablePbDir, _ = os.Getwd()
 	}
 	loadTableProtoFiles(TablePbDir)
 	fmt.Println(tableFileProtoMap)
@@ -46,8 +50,8 @@ func main2() {
 }
 
 func createSqlFile() {
-	tempOutFile := filepath.Join(TablePbDir, "../../script/sql", "tempInit.sql")
-	outFile := filepath.Join(TablePbDir, "../../script/sql", "Init.sql")
+	tempOutFile := filepath.Join(TablePbDir, "../script/sql", "tempInit.sql")
+	outFile := filepath.Join(TablePbDir, "../script/sql", "Init.sql")
 	os.Remove(tempOutFile)
 	sqlList := make([]string, 0)
 	for _, data := range tableFileProtoMap {
@@ -58,13 +62,20 @@ func createSqlFile() {
 		lastFiled := TableFiledProto{}
 		for i, filed := range data.FiledList {
 			if i == 0 {
-
 				sql += "\r\nCREATE TABLE IF NOT EXISTS `" + strings.ToLower(data.FileName) + "` ("
-				sql += "`" + filed.FiledName + "` " + getDBType(filed.FiledType) + " NOT NULL,"
+				sql += "`" + filed.FiledName + "` " + getDBType(filed.FiledType, filed.FiledTypeLen) + " NOT NULL"
+				if len(filed.FileShowDesc) > 0 {
+					sql += " COMMENT '" + filed.FileShowDesc + "'"
+				}
+				sql += ",\r\n"
 				sql += "PRIMARY KEY (`" + filed.FiledName + "`)"
 				sql += ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci; \n"
 			} else {
-				sql += " ALTER TABLE `" + strings.ToLower(data.FileName) + "` ADD COLUMN `" + filed.FiledName + "` " + getDBType(filed.FiledType) + " NULL AFTER `" + lastFiled.FiledName + "`; \n"
+				sql += " ALTER TABLE `" + strings.ToLower(data.FileName) + "` ADD COLUMN `" + filed.FiledName + "` " + getDBType(filed.FiledType, filed.FiledTypeLen) + " NULL"
+				if len(filed.FileShowDesc) > 0 {
+					sql += " COMMENT '" + filed.FileShowDesc + "'"
+				}
+				sql += " AFTER `" + lastFiled.FiledName + "`; \n"
 			}
 			lastFiled = filed
 		}
@@ -82,14 +93,18 @@ func createSqlFile() {
 	os.Rename(tempOutFile, outFile)
 }
 
-func getDBType(filedType string) string {
+func getDBType(filedType, fileTypeLen string) string {
 	if filedType == "uint64" || filedType == "int64" || filedType == "uint32" || filedType == "int32" {
 		return "int"
 
 	} else if filedType == "bool" {
 		return "TINYINT(1)"
 	} else if filedType == "string" {
-		return "varchar(255)"
+		if fileTypeLen == "text" {
+			return "text"
+		} else {
+			return "varchar(" + fileTypeLen + ")"
+		}
 	} else {
 		return "mediumblob"
 	}
@@ -99,7 +114,7 @@ func getDBType(filedType string) string {
 func createGoTableFile() {
 
 	relativePath := "Table.tmpl"
-	absPath := filepath.Join(TablePbDir, "../", relativePath)
+	absPath := filepath.Join(TablePbDir, relativePath)
 	tmpl, err := template.New("Table.tmpl").Funcs(template.FuncMap{
 		"TrimSuffix":     strings.TrimSuffix,
 		"scanVal":        ScanVal1,
@@ -116,6 +131,9 @@ func createGoTableFile() {
 
 	var buf bytes.Buffer
 	for fileName, proto := range tableFileProtoMap {
+		if len(fileName) < 2 {
+			continue
+		}
 		if fileName != proto.FileName {
 			continue
 		}
@@ -123,7 +141,7 @@ func createGoTableFile() {
 		if err != nil {
 			fmt.Println("mapTemplate Execute error :", err)
 		}
-		outFile := "../../src/table"
+		outFile := "../src/table"
 		outFile = filepath.Join(TablePbDir, outFile, fileName+"Table.go")
 		strBegin := "//*****begin****//"
 		strEnd := "//*****end****//"
@@ -184,7 +202,7 @@ func protoUnmarshal(list []TableFiledProto) string {
 			result += fmt.Sprintf("	   	%s := %s{}\n", filed.FiledName, filed.FiledType)
 			result += fmt.Sprintf("		err := proto.Unmarshal(bs%d, &%s)\n", filed.Value, filed.FiledName)
 			result += fmt.Sprintf("		if err != nil {\n")
-			result += fmt.Sprintf("		logger.Error(fmt.Sprintf(\"Unmarshal bs:%%v, data:%%v\", bs%d, data)) \n", filed.Value)
+			result += fmt.Sprintf("		logger.DbLogger.Error(fmt.Sprintf(\"Unmarshal bs:%%v, data:%%v\", bs%d, data)) \n", filed.Value)
 			result += "		  continue\n"
 			result += "		}\n"
 			result += fmt.Sprintf("		data.%s =&%s\n", filed.CamelCaseFiledName, filed.FiledName)
@@ -221,7 +239,7 @@ func saveSqlData(data TableMsgProto) string {
 	result += "if manger == nil || !manger.IsConnectFlag() {\n"
 	result += fmt.Sprintf("return false, errors.New(\" %sTableSqlOptional not found DataBaseManger or DataBaseManger not connect\")", data.FileName)
 	result += "}\n"
-	result += fmt.Sprintf("_, err := manger.GetDB().Exec(sql %s)\n", strings.TrimSuffix(params, ","))
+	result += fmt.Sprintf("_, err := manger.ExecuteSqlResult(sql %s)\n", strings.TrimSuffix(params, ","))
 	result += "if err != nil {\n"
 	result += fmt.Sprintf("return false, errors.New(fmt.Sprintf(\"save sql error table:%s, sql:%%s, data:%%v\", sql, data))\n", data.FileName)
 	result += "}"
@@ -356,8 +374,20 @@ func parseNormalTableFile(name string, wg *sync.WaitGroup) {
 			if len(leftss) != 2 {
 				continue
 			}
-			fileType := leftss[0]
-			fileName := leftss[1]
+			fileType := leftss[0] //字段类型
+			fileName := leftss[1] //字段名称
+			fileTypeLen := "255"  //字段类型长度 默认是 0
+			showDesc := ""
+			if fileType == "string" {
+				rss := ss[1]
+				e := 0
+				if strings.Contains(rss, "len[") {
+					b := strings.Index(rss, "len[")
+					e := strings.Index(rss, "]")
+					fileTypeLen = rss[b:e]
+				}
+				showDesc = rss[e:]
+			}
 
 			iVal, err := strconv.Atoi(strings.TrimSpace(ss[1]))
 			if err != nil {
@@ -366,6 +396,8 @@ func parseNormalTableFile(name string, wg *sync.WaitGroup) {
 			}
 			filed := TableFiledProto{
 				FiledType:          fileType,
+				FiledTypeLen:       fileTypeLen,
+				FileShowDesc:       showDesc,
 				FiledName:          fileName,
 				Value:              iVal,
 				CamelCaseFiledName: CamelCase(fileName),
