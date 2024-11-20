@@ -6,15 +6,11 @@ import (
 )
 
 func main() {
-
 	gameServer := gameServer.GameServer{}
 	gameServer.StartServer("game1001", "ly")
 	initHandler()
-
 }
 
 func initHandler() {
-	loginHandler := gameServer2.LoginHandler{}
-	loginHandler.Initializer()
-
+	gameServer.Inithandler(&gameServer2.LoginHandler{})
 }
