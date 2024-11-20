@@ -16,11 +16,6 @@ func (receiver *LoginHandler) Initializer() {
 	server.InitHandler(int32(protobufMsg.CMD_Login2), login2)
 }
 
-func init() {
-	handle := &LoginHandler{}
-	handle.Initializer()
-}
-
 func (receiver *LoginHandler) HandleName() string {
 	return "loginHandler"
 }
