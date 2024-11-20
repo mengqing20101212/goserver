@@ -73,7 +73,7 @@ type ServerContext struct {
 	Server *server.Server
 }
 
-// 用于rpc 调用需要的服务器节点信息
+// ServerNode 用于rpc 调用需要的服务器节点信息
 type ServerNode struct {
 	ServerType ServerType     //服务器类型
 	ServerId   string         //服务器id
@@ -159,11 +159,14 @@ func InitContext(logDir, serverId, env string, serverType ServerType, server ser
 	}
 
 	//test redis
-	_, err := db.RedisSet(db.ServerRedisKeys(db.GameServerStatusKeys, serverId), serverId)
+	_, err := db.RedisSet(db.RedisKeys(db.GameServerStatusKeys, serverId), serverId)
 	if err != nil {
 		return nil
 	}
-	db.RedisSet(db.PlayerRedisKeys(db.PlayerServerIdMap, serverId), serverId)
+	_, err = db.RedisSet(db.RedisKeys(db.PlayerServerIdMap, serverId), serverId)
+	if err != nil {
+		return nil
+	}
 
 	if server != nil {
 		server.Start()
