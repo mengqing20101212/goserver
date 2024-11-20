@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -54,4 +55,22 @@ func Bytes2Struct(data []byte, result *any) error {
 	buf.Write(data)
 	dec := gob.NewDecoder(&buf)
 	return dec.Decode(result)
+}
+func ToJsonStr(obj any) *string {
+	// 将结构体转换为JSON格式的字节切片
+	jsonBytes, err := json.Marshal(obj)
+	str := "{}"
+	if err != nil {
+		fmt.Println("转换失败:", err)
+		return &str
+	}
+	str = string(jsonBytes)
+	return &str
+}
+func JsonToObj(jsonStr *string, obj any) error {
+	err := json.Unmarshal([]byte(*jsonStr), obj)
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -9,6 +9,7 @@ import (
 	"logger"
 	"server"
 	"strconv"
+	"strings"
 )
 
 type ServerType int
@@ -21,6 +22,41 @@ const (
 	GM
 	Unknown
 )
+
+type RunModule int
+
+const (
+	TEST RunModule = iota
+	PRESS
+	ONLINE
+	UNKNOW
+)
+
+func (m RunModule) String() string {
+	switch m {
+	case TEST:
+		return "TEST"
+	case PRESS:
+		return "PRESS"
+	case ONLINE:
+		return "ONLINE"
+	default:
+		return "UNKNOW"
+	}
+}
+func ParserRunModule(str string) RunModule {
+	switch strings.ToUpper(str) {
+	case "TEST":
+		return TEST
+	case "PRESS":
+		return PRESS
+	case "ONLINE":
+		return ONLINE
+	default:
+		return UNKNOW
+
+	}
+}
 
 func (s ServerType) String() string {
 	switch s {
@@ -49,6 +85,7 @@ type ServerConfig struct {
 	ServerPort int `yaml:"serverPort"`
 	ServerType ServerType
 	ServerId   string
+	runModule  string
 	//TODO http相关
 
 }
@@ -69,8 +106,9 @@ type DbConfig struct {
 }
 
 type ServerContext struct {
-	Config ServerConfig
-	Server *server.Server
+	Config    ServerConfig
+	Server    *server.Server
+	RunModule RunModule
 }
 
 // ServerNode 用于rpc 调用需要的服务器节点信息
@@ -95,6 +133,7 @@ func ParserConfig(cfg string) int {
 		panic("parser config error " + err.Error())
 		return 0
 	}
+	Context.RunModule = ParserRunModule(Context.Config.runModule)
 	log.Info(cfg)
 	return Context.Config.ServerPort
 }
@@ -134,6 +173,7 @@ func getServerType(serviceName string) ServerType {
 var Context = new(ServerContext)
 var log *logger.Logger //系统日志
 var DB *db.DBManger    //数据库连接
+var ServerRunModule RunModule
 
 func InitContext(logDir, serverId, env string, serverType ServerType, server server.ServerInterface) *logger.Logger {
 	//初始化日志相关
@@ -156,16 +196,6 @@ func InitContext(logDir, serverId, env string, serverType ServerType, server ser
 	RedisInitFlag := db.InitRedisConnect(Context.Config.RedisConfig.RedisIp, strconv.Itoa(Context.Config.RedisConfig.RedisPort), Context.Config.RedisConfig.RedisPassword, "")
 	if !RedisInitFlag {
 		log.Error("init redis error")
-	}
-
-	//test redis
-	_, err := db.RedisSet(db.RedisKeys(db.GameServerStatusKeys, serverId), serverId)
-	if err != nil {
-		return nil
-	}
-	_, err = db.RedisSet(db.RedisKeys(db.PlayerServerIdMap, serverId), serverId)
-	if err != nil {
-		return nil
 	}
 
 	if server != nil {

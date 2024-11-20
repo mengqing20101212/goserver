@@ -55,8 +55,8 @@ func (this *GameServer) StartServer(serverId, env string) {
 	this.InitHandler()
 	gameLogger.Info("GameServer InitContext success")
 	ServerInstance.Start()
+	server.CreateServerStatus(&ServerInstance.Server, common.Game.String(), serverId, common.ServerRunModule.String())
 	gameLogger.Info(fmt.Sprintf("GameServer StartServer success  useCost:%d", (utils.GetNow()-begin)/1000))
-
 }
 
 func (this *GameServer) InitHandler() {

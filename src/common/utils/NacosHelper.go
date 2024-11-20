@@ -134,8 +134,8 @@ func initConfig(serverId, serverType *string) *string {
 		panic(err)
 	}
 	log.Info(cfg)
-	return &cfg
 	//common.Context.ParserConfig(cfg)
+	return &cfg
 
 }
 

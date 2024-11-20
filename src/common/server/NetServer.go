@@ -3,10 +3,12 @@ package server
 import (
 	"bytes"
 	"common/utils"
+	"db"
 	"fmt"
 	"logger"
 	"net"
 	"os"
+	"time"
 )
 
 // DefaultInputLen defines the default length (5120 bytes) for the buffer used in socket communication.
@@ -31,6 +33,22 @@ type Server struct {
 	listener      *net.TCPListener // listener holds the TCP listener for accepting incoming connections.
 	ConnectManger *ConnectManger   // ConnectManger handles the management of active socket connections for the server.
 	connectNum    uint16           // connectNum indicates the number of active connections managed by the server.
+}
+type ServerStatusEnum int32
+
+const (
+	OPEN   ServerStatusEnum = iota
+	WHILTE ServerStatusEnum = 1
+	CLOSE  ServerStatusEnum = 2
+)
+
+type ServerNodeStatus struct {
+	ServerId   string `json:"serverId"`
+	ServerType string `json:"serverType"`
+	Addr       string `json:"addr"`
+	Status     int    `json:"status"`
+	Load       int    `json:"load"`
+	RunModule  string `json:"runModule"`
 }
 
 var log = logger.SystemLogger
@@ -149,4 +167,28 @@ func (e *SocketChannel) Close(s string) {
 	log.Info(s)
 	e.con.Close()
 	e.cid = 0
+}
+
+var ServerStatus ServerNodeStatus
+
+func UpdateServerNodeStatus(status ServerStatusEnum) {
+	ServerStatus.Status = int(status)
+	jsonStr := utils.ToJsonStr(ServerStatus)
+	key := db.RedisKeys(db.GameServerStatusKeyEnum, ServerStatus.ServerType, ServerStatus.ServerId)
+	set, err := db.RedisSet(key, *jsonStr, 10*time.Second)
+	if err != nil {
+		return
+	}
+	log.Info(fmt.Sprintf("set redis key:%s value:%s", key, set))
+}
+
+func CreateServerStatus(server *Server, serverType, serverId, runModule string) {
+	ServerStatus = ServerNodeStatus{
+		Addr:       server.listener.Addr().String(),
+		ServerType: serverType,
+		ServerId:   serverId,
+		Load:       0,
+		RunModule:  runModule,
+	}
+	UpdateServerNodeStatus(OPEN)
 }

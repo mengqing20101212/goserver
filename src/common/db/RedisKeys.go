@@ -8,7 +8,7 @@ type RedisKey struct {
 }
 
 var (
-	GameServerStatusKeys RedisKey = RedisKey{key: "GameServerStatusKeys:%s", desc: "服务器状态"}
+	GameServerStatusKeyEnum RedisKey = RedisKey{key: "GameServerStatus:%s:%s", desc: "服务器状态GameServerStatus:ServerType:ServerId "}
 )
 
 func RedisKeys(serverKeys RedisKey, param ...string) string {

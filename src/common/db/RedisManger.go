@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/redis/go-redis/v9"
+	"time"
 )
 
 var redisClient *redis.Client
@@ -37,8 +38,8 @@ func CloseRedisConnect() {
 func RedisGet(key string) (string, error) {
 	return redisClient.Get(context.Background(), key).Result()
 }
-func RedisSet(key, val string) (string, error) {
-	return redisClient.Set(context.Background(), key, val, 0).Result()
+func RedisSet(key, val string, ttl time.Duration) (string, error) {
+	return redisClient.Set(context.Background(), key, val, ttl).Result()
 }
 
 func GetRedis() *redis.Client {
