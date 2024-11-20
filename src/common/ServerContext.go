@@ -2,6 +2,7 @@ package common
 
 import (
 	"common/utils"
+	"db"
 	"fmt"
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"gopkg.in/yaml.v3"
@@ -131,12 +132,27 @@ func getServerType(serviceName string) ServerType {
 }
 
 var Context = new(ServerContext)
-var log *logger.Logger
+var log *logger.Logger //系统日志
+var DB *db.DBManger    //数据库连接
 
-func InitContext(logDir, serverId, env string, serverType ServerType) {
+func InitContext(logDir, serverId, env string, serverType ServerType, server server.ServerInterface) *logger.Logger {
+	//初始化日志相关
 	Context.Config.LogDir = logDir
 	logger.InitType(logDir)
 	log = logger.SystemLogger
+	//初始化 nacos 配置中心和 service 管理
 	utils.InitNacos(serverId, serverType.String(), env, ParserConfig)
 	utils.RegisterNewServerCallBack(serverType.String(), ParserServerNode)
+	resultLog := logger.Init(Context.Config.LogDir, serverType.String())
+
+	//初始化数据库连接
+	DB = db.GetDataBaseManger()
+	dbInitFlag := db.InitDataBase(DB, Context.Config.DbConfig.DbUser, Context.Config.DbConfig.DbPassword, Context.Config.DbConfig.DbIp, Context.Config.DbConfig.DbName, int32(Context.Config.DbConfig.DbPort))
+	if !dbInitFlag {
+		log.Error("init db error")
+	}
+	if server != nil {
+		server.Start()
+	}
+	return resultLog
 }

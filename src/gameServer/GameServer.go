@@ -49,14 +49,13 @@ var ServerInstance GameServer
 var PlayerManger = gameServer2.NewPlayerManager()
 
 func (this *GameServer) StartServer(serverId, env string) {
-
-	common.InitContext("../logs", serverId, env, common.Game)
-	gameLogger = logger.Init(common.Context.Config.LogDir, "game")
+	begin := utils.GetNow()
+	ServerInstance.Server = server.NewServer(common.Context.Config.ServerPort)
+	gameLogger = common.InitContext("../logs", serverId, env, common.Game, &ServerInstance)
 	this.InitHandler()
 	gameLogger.Info("GameServer InitContext success")
-	ServerInstance.Server = server.NewServer(common.Context.Config.ServerPort)
 	ServerInstance.Start()
-	gameLogger.Info("GameServer StartServer success")
+	gameLogger.Info(fmt.Sprintf("GameServer StartServer success  useCost:%d", (utils.GetNow()-begin)/1000))
 
 }
 

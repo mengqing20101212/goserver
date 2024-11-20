@@ -18,6 +18,8 @@ const DefaultMaxConnectLen = 1024
 var GeneralCodec = new(PackageFactory) //全局的编码解码器
 type ServerInterface interface {
 	CreateNewClient(channel *SocketChannel) NetClientInterface
+	Start()
+	Stop()
 }
 
 // TCP 服务端连接
@@ -92,6 +94,17 @@ func (self *Server) OnAccept(con net.Conn, cid uint16) {
 		inputMsg: utils.NewByteBufferByBuf(bytes.NewBuffer(make([]byte, DefaultInputLen))),
 	}
 	netClient := ServerInterface(self).CreateNewClient(&sc)
+	//设置socket读写队列大小
+	err := netClient.GetSocketChannel().con.SetWriteBuffer(DefaultInputLen)
+	if err != nil {
+		log.Error(fmt.Sprintf("SetWriteBuffer error:%s DefaultInputLen:%d", err, DefaultInputLen))
+		return
+	}
+	err = netClient.GetSocketChannel().con.SetReadBuffer(DefaultInputLen)
+	if err != nil {
+		log.Error(fmt.Sprintf("setReadBuffer error:%s DefaultInputLen:%d", err, DefaultInputLen))
+		return
+	}
 	sc.inputMsg.GetBuffer().Reset()
 	self.ConnectManger.AddConn(netClient, self)
 }

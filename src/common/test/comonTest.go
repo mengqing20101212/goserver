@@ -4,6 +4,7 @@ import (
 	"common"
 	"common/utils"
 	"encoding/base64"
+	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"logger"
 	"os"
 	"time"
@@ -21,14 +22,13 @@ func main() {
 }
 
 func testConfig(serverId string) {
-	common.InitContext("../../logs", serverId, "ly", common.Game)
+	common.InitContext("../../logs", serverId, "ly", common.Game, nil)
 	time.Sleep(1023 * time.Second)
 }
 
 func testNacos() {
 	utils.InitNacos("../../logs", "game1001", "ly", nil)
-	utils.RegisterNewServerCallBack(common.Game.String(), func(str string) {
-		println(str)
+	utils.RegisterNewServerCallBack(common.Game.String(), func(isAdd bool, instance model.Instance) {
 	})
 }
 
