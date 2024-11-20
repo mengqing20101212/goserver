@@ -43,7 +43,7 @@ func main() {
 		TablePbDir, _ = os.Getwd()
 	}
 	loadTableProtoFiles(TablePbDir)
-	fmt.Println(tableFileProtoMap)
+	//fmt.Println(tableFileProtoMap)
 	createGoTableFile()
 	createSqlFile()
 	fmt.Println("end parse table buffer")
@@ -59,6 +59,7 @@ func createSqlFile() {
 			continue
 		}
 		sql := ""
+		fmt.Sprintf("createSqlFile:" + data.FileName)
 		lastFiled := TableFiledProto{}
 		for i, filed := range data.FiledList {
 			if i == 0 {
@@ -80,6 +81,7 @@ func createSqlFile() {
 			lastFiled = filed
 		}
 		sqlList = append(sqlList, sql)
+		fmt.Println("createSql:" + sql)
 	}
 
 	fs, err := os.OpenFile(tempOutFile, os.O_CREATE|os.O_RDWR, 0755)
@@ -324,7 +326,7 @@ func parseNormalTableFile(name string, wg *sync.WaitGroup) {
 	defer fs.Close()
 	defer wg.Done()
 	fileNameWithExtension := filepath.Base(name)
-	fmt.Println("File name with extension:", fileNameWithExtension)
+	fmt.Println("解析proto文件:", name)
 
 	// 去除后缀，得到不带后缀的文件名
 	fileNameWithoutExtension := strings.TrimSuffix(fileNameWithExtension, filepath.Ext(fileNameWithExtension))
@@ -337,6 +339,7 @@ func parseNormalTableFile(name string, wg *sync.WaitGroup) {
 		if len(line) <= 0 {
 			continue
 		}
+		oldLine := line
 		index := strings.Index(line, "//")
 		if index > 0 {
 			line = line[:index]
@@ -376,16 +379,23 @@ func parseNormalTableFile(name string, wg *sync.WaitGroup) {
 			fileType := leftss[0] //字段类型
 			fileName := leftss[1] //字段名称
 			fileTypeLen := "255"  //字段类型长度 默认是 0
+			showDescArr := strings.Split(oldLine, "//")
 			showDesc := ""
+			if len(showDescArr) > 1 {
+				showDesc = showDescArr[1]
+			}
 			if fileType == "string" {
-				rss := ss[1]
-				e := 0
-				if strings.Contains(rss, "len[") {
-					b := strings.Index(rss, "len[")
-					e := strings.Index(rss, "]")
-					fileTypeLen = rss[b:e]
+				rss := ""
+				if len(showDescArr) > 1 {
+					rss = showDescArr[1]
+					e := 0
+					if strings.Contains(rss, "len[") {
+						b := strings.Index(rss, "len[")
+						e := strings.Index(rss, "]")
+						fileTypeLen = rss[b+4 : e]
+					}
+					showDesc = rss[e:]
 				}
-				showDesc = rss[e:]
 			}
 
 			iVal, err := strconv.Atoi(strings.TrimSpace(ss[1]))

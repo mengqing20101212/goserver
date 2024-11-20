@@ -15,7 +15,7 @@ if exist "%folderPath%" (
     echo Folder does not exist: %folderPath%
 )
 
-TableParser
+TableParser .
 echo %cd%
 set "tableDir=%cd%\..\src\table"
 cd /d "%tableDir%"
