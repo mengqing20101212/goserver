@@ -16,6 +16,11 @@ func (receiver *LoginHandler) Initializer() {
 	server.InitHandler(int32(protobufMsg.CMD_Login2), login2)
 }
 
+func init() {
+	handle := &LoginHandler{}
+	handle.Initializer()
+}
+
 func (receiver *LoginHandler) HandleName() string {
 	return "loginHandler"
 }
@@ -24,7 +29,7 @@ func login(msg proto.Message, channel server.NetClientInterface) (res bool, resp
 	req := msg.(*protobufMsg.CsLogin)
 
 	newPlayer := gameServer.NewPlayer(int64(req.Scores[0]), channel)
-	//gameServer2.PlayerManger.AddPlayer(newPlayer)
+	gameServer.PlayerManagerInstance.AddPlayer(newPlayer)
 	newPlayer.StartRun()
 	return false, &protobufMsg.ScLogin{
 		Name:   req.Name,

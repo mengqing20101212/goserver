@@ -12,12 +12,17 @@ type PlayerManager struct {
 	lock             sync.Mutex
 }
 
+var PlayerManagerInstance *PlayerManager
+
 func NewPlayerManager() *PlayerManager {
 	return &PlayerManager{
 		olinePlayerMap:   make(map[int64]*Player),
 		namePlayerMap:    make(map[string]*Player),
 		sessionPlayerMap: make(map[uint16]*Player),
 	}
+}
+func init() {
+	PlayerManagerInstance = NewPlayerManager()
 }
 
 func (self *PlayerManager) AddPlayer(player *Player) {

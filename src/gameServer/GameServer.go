@@ -4,8 +4,6 @@ import (
 	"common"
 	"common/utils"
 	"fmt"
-	gameServer "gameServer/login"
-	gameServer2 "gameServer/player"
 	"logger"
 	"protobufMsg"
 	"server"
@@ -46,24 +44,18 @@ func (this *GameClient) HandleReceivePackageMessage(data *server.OptionData, mgr
 }
 
 var ServerInstance GameServer
-var PlayerManger = gameServer2.NewPlayerManager()
 
 func (this *GameServer) StartServer(serverId, env string) {
 	begin := utils.GetNow()
 	ServerInstance.Server = server.NewServer(common.Context.Config.ServerPort)
 	gameLogger = common.InitContext("../logs", serverId, env, common.Game, &ServerInstance)
-	this.InitHandler()
 	gameLogger.Info("GameServer InitContext success")
 	ServerInstance.Start()
 	server.CreateServerStatus(&ServerInstance.Server, common.Game.String(), serverId, common.ServerRunModule.String())
 	gameLogger.Info(fmt.Sprintf("GameServer StartServer success  useCost:%d", (utils.GetNow()-begin)/1000))
 }
 
-func (this *GameServer) InitHandler() {
-	initHandler(&gameServer.LoginHandler{})
-}
-
-func initHandler(handler server.HandlerInterface) {
+func Inithandler(handler server.HandlerInterface) {
 	handler.Initializer()
 }
 
