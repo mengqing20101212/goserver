@@ -151,8 +151,32 @@ func InitContext(logDir, serverId, env string, serverType ServerType, server ser
 	if !dbInitFlag {
 		log.Error("init db error")
 	}
+
+	//redis 初始化
+	RedisInitFlag := db.InitRedisConnect(Context.Config.RedisConfig.RedisIp, strconv.Itoa(Context.Config.RedisConfig.RedisPort), Context.Config.RedisConfig.RedisPassword, "")
+	if !RedisInitFlag {
+		log.Error("init redis error")
+	}
+
+	//test redis
+	_, err := db.RedisSet(db.ServerRedisKeys(db.GameServerStatusKeys, serverId), serverId)
+	if err != nil {
+		return nil
+	}
+	db.RedisSet(db.PlayerRedisKeys(db.PlayerServerIdMap, serverId), serverId)
+
 	if server != nil {
 		server.Start()
 	}
 	return resultLog
+}
+
+func CloseContext() {
+	utils.CloseNacos()
+	db.GetCacheService().ClearAllFunc()
+	DB.CloseDBConnect()
+	db.CloseRedisConnect()
+	if Context.Server != nil {
+		Context.Server.Stop()
+	}
 }

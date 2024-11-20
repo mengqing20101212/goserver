@@ -69,8 +69,7 @@ func initHandler(handler server.HandlerInterface) {
 
 func (this *GameServer) StopServer() {
 	//TODO  保存数据库数据
-	this.Server.ConnectManger.CloseAllClient()
-	this.Server.Stop()
+	common.CloseContext()
 	gameLogger.Info("GameServer StopServer success")
 }
 

@@ -72,6 +72,14 @@ func (self *DBManger) GetDB() *sqlx.DB {
 	return self.db
 }
 
+func (self *DBManger) CloseDBConnect() {
+	err := self.db.Close()
+	if err != nil {
+		return
+	}
+
+}
+
 var DbManger DBManger
 
 func InitDefaultDataBase(userName, passWord, ip, databases string, port int32) bool {
