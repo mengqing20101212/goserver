@@ -143,9 +143,9 @@ func createGoTableFile() {
 		}
 		outFile := "../src/table"
 		outFile = filepath.Join(TablePbDir, outFile, fileName+"Table.go")
-		strBegin := "//*****begin****//"
-		strEnd := "//*****end****//"
-		scanExtCode := ScanOutFileExtCode(outFile, strBegin, strEnd)
+		strBegin := "//***** 自定义代码区 begin ****"
+		strEnd := "//***** 自定义代码区 end ****"
+		scanExtCode := ScanOutFileExtCode(outFile, strBegin[2:], strEnd)
 		os.Remove(outFile)
 		fs, err := os.OpenFile(outFile, os.O_RDWR|os.O_CREATE, 0755)
 		defer fs.Close()
@@ -153,14 +153,13 @@ func createGoTableFile() {
 			fmt.Println(" err:", err)
 			return
 		}
-		fmt.Println("outFile:", outFile, ", scanExtCode: ", scanExtCode)
+		fmt.Println("outFile:", outFile, ", scanExtCode: ", *scanExtCode)
 		fs.Write(buf.Bytes())
 		fs.WriteString(strBegin)
 		fs.WriteString("\r\n")
-		fs.WriteString(scanExtCode)
+		fs.WriteString(*scanExtCode)
 		fs.WriteString("\r\n")
 		fs.WriteString(strEnd)
-		fmt.Println(outFile)
 	}
 }
 

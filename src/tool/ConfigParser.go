@@ -116,12 +116,12 @@ func createConfig(e ExcelData, s *sync.WaitGroup) {
 		fmt.Println("mapTemplate Execute error :", err)
 	}
 	outFile := filepath.Join(excelDir, "../src/config", e.FileBaseName+"Config.go")
-	strBegin := "//*****begin****//"
-	strEnd := "//*****end****//"
-	scanExtCode := ScanOutFileExtCode(outFile, strBegin, strEnd)
-	strBeginFiled := "//********filed begin********//"
-	strEndFiled := "//********filed end********//"
-	scanExtFiled := ScanOutFileExtCode(outFile, strBeginFiled, strEndFiled)
+	strBegin := "//***** 自定义代码区 begin ****"
+	strEnd := "//***** 自定义代码区 end ****"
+	scanExtCode := *ScanOutFileExtCode(outFile, strBegin[2:], strEnd)
+	strBeginFiled := "//***** 自定义代码区 begin ****"
+	strEndFiled := "//***** 自定义代码区 end ****"
+	scanExtFiled := *ScanOutFileExtCode(outFile, strBeginFiled, strEndFiled)
 	scanExtFiled += "\r\n"
 	os.Remove(outFile)
 	fs, err := os.OpenFile(outFile, os.O_RDWR|os.O_CREATE, 0755)
