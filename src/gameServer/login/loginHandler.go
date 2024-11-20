@@ -1,7 +1,6 @@
 package gameServer
 
 import (
-	gameServer2 "gameServer"
 	gameServer "gameServer/player"
 	"github.com/golang/protobuf/proto"
 	"protobufMsg"
@@ -25,7 +24,7 @@ func login(msg proto.Message, channel server.NetClientInterface) (res bool, resp
 	req := msg.(*protobufMsg.CsLogin)
 
 	newPlayer := gameServer.NewPlayer(int64(req.Scores[0]), channel)
-	gameServer2.PlayerManger.AddPlayer(newPlayer)
+	//gameServer2.PlayerManger.AddPlayer(newPlayer)
 	newPlayer.StartRun()
 	return false, &protobufMsg.ScLogin{
 		Name:   req.Name,
