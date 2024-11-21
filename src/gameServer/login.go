@@ -26,6 +26,7 @@ func login(msg proto.Message, channel server.NetClientInterface) (res bool, resp
 	req := msg.(*protobufMsg.CsLogin)
 
 	newPlayer := NewPlayer(int64(req.Scores[0]), channel)
+	newPlayer.PostEvent(EventType_CreateRole, newPlayer)
 	PlayerManagerInstance.AddPlayer(newPlayer)
 	newPlayer.StartRun()
 	return false, &protobufMsg.ScLogin{

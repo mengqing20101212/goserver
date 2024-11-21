@@ -213,3 +213,13 @@ func CloseContext() {
 		Context.Server.Stop()
 	}
 }
+
+func IsTest() bool {
+	return Context.RunModule == TEST
+}
+func IsPress() bool {
+	return Context.RunModule == TEST
+}
+func IsOnline() bool {
+	return Context.RunModule == ONLINE
+}
