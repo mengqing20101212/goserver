@@ -6,5 +6,6 @@ use (
 ../common/db
 ../common/logger
 ../protobufMsg
+../table
 )
 go 1.23.3

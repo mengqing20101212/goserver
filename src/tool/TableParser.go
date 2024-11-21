@@ -117,22 +117,21 @@ func createGoTableFile() {
 
 	relativePath := "Table.tmpl"
 	absPath := filepath.Join(TablePbDir, relativePath)
-	tmpl, err := template.New("Table.tmpl").Funcs(template.FuncMap{
-		"TrimSuffix":     strings.TrimSuffix,
-		"scanVal":        ScanVal1,
-		"makeScanBytes":  makeScanBytes,
-		"protoUnmarshal": protoUnmarshal,
-		"saveSqlData":    saveSqlData,
-		"createSetGet":   createSetGet,
-		"ToLower":        strings.ToLower,
-	}).ParseFiles(absPath)
-	if err != nil {
-		fmt.Println("Error parsing template:", err)
-		return
-	}
-
-	var buf bytes.Buffer
 	for fileName, proto := range tableFileProtoMap {
+		var buf bytes.Buffer
+		tmpl, err := template.New("Table.tmpl").Funcs(template.FuncMap{
+			"TrimSuffix":     strings.TrimSuffix,
+			"scanVal":        ScanVal1,
+			"makeScanBytes":  makeScanBytes,
+			"protoUnmarshal": protoUnmarshal,
+			"saveSqlData":    saveSqlData,
+			"createSetGet":   createSetGet,
+			"ToLower":        strings.ToLower,
+		}).ParseFiles(absPath)
+		if err != nil {
+			fmt.Println("Error parsing template:", err)
+			return
+		}
 		if len(fileName) < 2 {
 			continue
 		}
@@ -197,11 +196,17 @@ func makeScanBytes(list []TableFiledProto) string {
 func protoUnmarshal(list []TableFiledProto) string {
 
 	result := ""
+	index := 0
 	for _, filed := range list {
 		if !IsBaseType(filed.FiledType) {
 			result += "\r\n"
 			result += fmt.Sprintf("	   	%s := %s{}\n", filed.FiledName, filed.FiledType)
-			result += fmt.Sprintf("		err := proto.Unmarshal(bs%d, &%s)\n", filed.Value, filed.FiledName)
+			if index == 0 {
+				result += fmt.Sprintf("		err := proto.Unmarshal(bs%d, &%s)\n", filed.Value, filed.FiledName)
+			} else {
+				result += fmt.Sprintf("		err = proto.Unmarshal(bs%d, &%s)\n", filed.Value, filed.FiledName)
+			}
+			index++
 			result += fmt.Sprintf("		if err != nil {\n")
 			result += fmt.Sprintf("		logger.DbLogger.Error(fmt.Sprintf(\"Unmarshal bs:%%v, data:%%v\", bs%d, data)) \n", filed.Value)
 			result += "		  continue\n"

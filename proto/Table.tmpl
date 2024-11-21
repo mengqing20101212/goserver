@@ -24,7 +24,7 @@ func (self *{{.FileName}}TableSqlOptional) OnQuerySuccess(flag bool, rows *sql.R
 	return list
 }
 
-func (self *{{.FileName}}TableSqlOptional) selectSql(sql string, params ...any) ([]Account, error) {
+func (self *{{.FileName}}TableSqlOptional) selectSql(sql string, params ...any) ([]{{.FileName}}, error) {
 	manger := db.GetDataBaseManger()
 	if manger == nil || !manger.IsConnectFlag() {
 		return nil, errors.New(" {{.FileName}}TableSqlOptional not found DataBaseManger or DataBaseManger not connect")

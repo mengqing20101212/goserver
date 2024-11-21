@@ -2,7 +2,6 @@ package main
 
 import (
 	"gameServer"
-	gameServer2 "gameServer/login"
 )
 
 func main() {
@@ -12,5 +11,5 @@ func main() {
 }
 
 func initHandler() {
-	gameServer.Inithandler(&gameServer2.LoginHandler{})
+	gameServer.Inithandler(&gameServer.LoginHandler{})
 }

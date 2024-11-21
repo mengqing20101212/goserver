@@ -1,0 +1,43 @@
+syntax = "proto3";
+package table;
+option go_package = "/table";
+
+message UserSetting
+{
+  int32 curHeadId =1; //当前头像id
+  int32 curSkinId =2;//当前皮肤id
+  repeated int32 headIdList =3;//头像列表
+  repeated int32 skinIdList =4;//皮肤列表
+}
+
+message Hero
+{
+  int32 id = 1; //英雄id
+  int32 star = 2; //星数
+  int32 lv = 3; //等级
+  repeated int32 skillIdList = 4;//技能id列表
+  int32 exp = 5; //经验
+
+}
+
+message HeroModule
+{
+  repeated Hero heroList = 1;//英雄列表
+}
+
+message Modules
+{
+  HeroModule heroModule = 1; //英雄模块
+}
+
+message PlayerData
+{
+  uint64 playerId = 1; //玩家id
+  string playerName = 2; //玩家名称
+  int32 level = 3;//玩家等级
+  uint32 exp = 4;//玩家经验
+  uint64 gold = 5;//金币
+  uint64 diamond = 6;//钻石
+  UserSetting userSetting = 7; //玩家设置
+  Modules modules = 8; //各个模块数据
+}

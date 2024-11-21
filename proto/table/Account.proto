@@ -1,6 +1,6 @@
 syntax = "proto3";
-package protobuf;
-option go_package = "protobuf/protobufMsg";
+package table;
+option go_package = "/table";
 
 message RoleShow
 {

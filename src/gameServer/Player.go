@@ -2,9 +2,9 @@ package gameServer
 
 import (
 	"common/utils"
-	"gameServer"
 	"server"
 	"sync"
+	"table"
 	"time"
 )
 
@@ -12,16 +12,17 @@ import (
 const GameMaxTickTimer = 100
 
 type Player struct {
-	Client        *gameServer.GameClient
+	Client        *GameClient
 	PlayerId      int64
 	Name          string
 	isStart       bool
 	lock          sync.Mutex
 	lastTickTimer int64 //上次心跳时间
+	PlayerData    table.PlayerDataTableProxy
 }
 
 func NewPlayer(playerId int64, client server.NetClientInterface) *Player {
-	gameClient := client.(*gameServer.GameClient)
+	gameClient := client.(*GameClient)
 	return &Player{Client: gameClient, PlayerId: playerId, lastTickTimer: utils.GetNow()}
 }
 
@@ -34,12 +35,11 @@ func (this *Player) StartRun() {
 		for {
 			now := utils.GetNow()
 			//处理所有 网络包
-			this.Client.TickNet(gameServer.ServerInstance.ConnectManger)
+			this.Client.TickNet(ServerInstance.ConnectManger)
 
 			//TODO 跨天检查
 			if !utils.IsSameDay(now, this.lastTickTimer) {
 				//  抛出跨天事件
-
 			}
 			//TODO 跨周检查
 			this.lastTickTimer = now

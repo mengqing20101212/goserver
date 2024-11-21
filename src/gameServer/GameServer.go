@@ -4,6 +4,7 @@ import (
 	"common"
 	"common/utils"
 	"fmt"
+	"github.com/golang/protobuf/proto"
 	"logger"
 	"protobufMsg"
 	"server"
@@ -11,8 +12,11 @@ import (
 
 var gameLogger *logger.Logger
 
+type HandlePlayerFunc func(msg proto.Message, channel *GameClient, player *Player) (res bool, responseMessage proto.Message)
+
 type GameServer struct {
 	server.Server
+	handlePlayerMap map[int32]HandlePlayerFunc
 }
 
 func (this *GameServer) CreateNewClient(channel *server.SocketChannel) server.NetClientInterface {
@@ -37,8 +41,22 @@ func (this *GameClient) HandleReceivePackageMessage(data *server.OptionData, mgr
 			return true
 		}
 		return true
-	} else {
-		this.NetClient.HandleReceivePackageMessage(data, mgr)
+	} else { //玩家已经登录
+		player := PlayerManagerInstance.GetPlayer(this.playerId)
+		handle := ServerInstance.handlePlayerMap[cmd]
+		if handle != nil {
+			returnFlag, response := handle(data.PackageMessage.Message, this, player)
+			responseData, err := proto.Marshal(response)
+			if err != nil {
+				this.CloseNet(fmt.Sprintf(" parse receivePackageMessage response req:%s, response:%s, pack:%s, error:%s", data.PackageMessage.Message.String(), response, data.PackageMessage.Package.String(), err), mgr)
+				return true
+			}
+			resPack := server.CreatePackage(data.PackageMessage.Cmd, data.PackageMessage.TraceId, data.PackageMessage.SendTimer, data.PackageMessage.Sid, responseData)
+			this.SocketChannel.SendMsg(server.GeneralCodec.Encode(resPack))
+			return returnFlag
+		} else {
+			this.CloseNet(fmt.Sprintf(" unknown cmd: %d, sid: %d", cmd, this.GetCid()), mgr)
+		}
 	}
 	return false
 }
@@ -57,6 +75,11 @@ func (this *GameServer) StartServer(serverId, env string) {
 
 func Inithandler(handler server.HandlerInterface) {
 	handler.Initializer()
+}
+
+func AddGameServerHandler(cmd int32, handle HandlePlayerFunc) {
+	ServerInstance.handlePlayerMap[cmd] = handle
+
 }
 
 func (this *GameServer) StopServer() {
