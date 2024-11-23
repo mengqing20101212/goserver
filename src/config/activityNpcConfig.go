@@ -2,7 +2,6 @@ package config
 
 import (
 	"bufio"
-	"common/logger"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -49,7 +48,7 @@ func (self *ActivityNpcConfigPtr) GetConfigList() []*ActivityNpcConfig {
 func (self *ActivityNpcConfigPtr) GetActivityNpcConfig(id int32) *ActivityNpcConfig {
 	ptr := self.configMap[id]
 	if ptr == nil {
-		logger.SystemLogger.Error(fmt.Sprintf("not found ActivityNpcConfig id:%d", id))
+		log.Error(fmt.Sprintf("not found ActivityNpcConfig id:%d", id))
 	}
 	return ptr
 }
@@ -78,7 +77,7 @@ func LoadActivityNpcConfig(fileUrl string) bool {
 	defer activitynpcConfigSwitch.lock.Unlock()
 	fs, err := os.OpenFile(filepath.Join(fileUrl, "activityNpc.txt"), os.O_RDWR, 0755)
 	if err != nil {
-		logger.SystemLogger.Error(fmt.Sprintf("load fileUrl:%s error:%s", fileUrl, err))
+		log.Error(fmt.Sprintf("load fileUrl:%s error:%s", fileUrl, err))
 		return false
 	}
 	defer fs.Close()
@@ -116,7 +115,7 @@ func LoadActivityNpcConfig(fileUrl string) bool {
 		activitynpcConfigSwitch.afterLoad(&activitynpcConfigSwitch.config1)
 	}
 	activitynpcConfigSwitch.isSwitch = !activitynpcConfigSwitch.isSwitch
-	logger.SystemLogger.Info(fmt.Sprintf("load file:%s, success", fs.Name()))
+	log.Info(fmt.Sprintf("load file:%s, success", fs.Name()))
 	return true
 }
 

@@ -2,7 +2,6 @@ package config
 
 import (
 	"bufio"
-	"common/logger"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -41,7 +40,7 @@ func (self *ActivitypassawardConfigPtr) GetConfigList() []*ActivitypassawardConf
 func (self *ActivitypassawardConfigPtr) GetActivitypassawardConfig(id int32) *ActivitypassawardConfig {
 	ptr := self.configMap[id]
 	if ptr == nil {
-		logger.SystemLogger.Error(fmt.Sprintf("not found ActivitypassawardConfig id:%d", id))
+		log.Error(fmt.Sprintf("not found ActivitypassawardConfig id:%d", id))
 	}
 	return ptr
 }
@@ -70,7 +69,7 @@ func LoadActivitypassawardConfig(fileUrl string) bool {
 	defer activitypassawardConfigSwitch.lock.Unlock()
 	fs, err := os.OpenFile(filepath.Join(fileUrl, "activitypassaward.txt"), os.O_RDWR, 0755)
 	if err != nil {
-		logger.SystemLogger.Error(fmt.Sprintf("load fileUrl:%s error:%s", fileUrl, err))
+		log.Error(fmt.Sprintf("load fileUrl:%s error:%s", fileUrl, err))
 		return false
 	}
 	defer fs.Close()
@@ -108,7 +107,7 @@ func LoadActivitypassawardConfig(fileUrl string) bool {
 		activitypassawardConfigSwitch.afterLoad(&activitypassawardConfigSwitch.config1)
 	}
 	activitypassawardConfigSwitch.isSwitch = !activitypassawardConfigSwitch.isSwitch
-	logger.SystemLogger.Info(fmt.Sprintf("load file:%s, success", fs.Name()))
+	log.Info(fmt.Sprintf("load file:%s, success", fs.Name()))
 	return true
 }
 

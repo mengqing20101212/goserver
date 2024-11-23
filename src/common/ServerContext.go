@@ -85,7 +85,9 @@ type ServerConfig struct {
 	ServerPort int `yaml:"serverPort"`
 	ServerType ServerType
 	ServerId   string
-	runModule  string
+	runModule  string `yaml:"runModule"`
+	ConfigPath string `yaml:"configPath"`
+
 	//TODO http相关
 
 }
@@ -134,7 +136,6 @@ func ParserConfig(cfg string) int {
 		return 0
 	}
 	Context.RunModule = ParserRunModule(Context.Config.runModule)
-	log.Info(cfg)
 	return Context.Config.ServerPort
 }
 
@@ -199,7 +200,7 @@ func InitContext(logDir, serverId, env string, serverType ServerType, server ser
 	}
 
 	if server != nil {
-		server.Start()
+		server.SetServerPort(Context.Config.ServerPort)
 	}
 	return resultLog
 }

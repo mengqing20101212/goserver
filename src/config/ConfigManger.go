@@ -1,8 +1,20 @@
 package config
 
-import "fmt"
+import (
+	"fmt"
+	"logger"
+)
 
-func InitConfigManger(path string) {
+var log *logger.Logger
+
+func InitConfigManger(logger *logger.Logger, path string) {
+	if log == nil {
+		log = logger
+	}
+
+	if !LoadActivitypassawardConfig(path) {
+		panic(fmt.Sprintf("LoadActivitypassawardConfig(path) error"))
+	}
 
 	if !LoadActivityNpcGroupConfig(path) {
 		panic(fmt.Sprintf("LoadActivityNpcGroupConfig(path) error"))
@@ -18,10 +30,6 @@ func InitConfigManger(path string) {
 
 	if !LoadActivityInfoConfig(path) {
 		panic(fmt.Sprintf("LoadActivityInfoConfig(path) error"))
-	}
-
-	if !LoadActivitypassawardConfig(path) {
-		panic(fmt.Sprintf("LoadActivitypassawardConfig(path) error"))
 	}
 
 }

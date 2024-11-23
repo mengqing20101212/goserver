@@ -4,7 +4,6 @@ import (
 "bufio"
 "encoding/json"
 "fmt"
-"common/logger"
 "os"
 "strings"
 "path/filepath"
@@ -30,7 +29,7 @@ return self.configList
 func (self *{{.FileBaseName}}ConfigPtr) Get{{.FileBaseName}}Config(id int32) *{{.FileBaseName}}Config {
 ptr := self.configMap[id]
 if ptr == nil {
-logger.SystemLogger.Error(fmt.Sprintf("not found {{.FileBaseName}}Config id:%d", id))
+log.Error(fmt.Sprintf("not found {{.FileBaseName}}Config id:%d", id))
 }
 return ptr
 }
@@ -59,7 +58,7 @@ func Load{{.FileBaseName}}Config(fileUrl string) bool {
 defer {{ToLower .FileBaseName}}ConfigSwitch.lock.Unlock()
 fs, err := os.OpenFile(filepath.Join(fileUrl,  "{{.FileBaseNameOld}}.txt"), os.O_RDWR, 0755)
 if err != nil {
-logger.SystemLogger.Error(fmt.Sprintf("load fileUrl:%s error:%s", fileUrl, err))
+log.Error(fmt.Sprintf("load fileUrl:%s error:%s", fileUrl, err))
 return false
 }
 defer fs.Close()
@@ -97,7 +96,7 @@ if {{ToLower .FileBaseName}}ConfigSwitch.isSwitch {
 {{ToLower .FileBaseName}}ConfigSwitch.afterLoad(&{{ToLower .FileBaseName}}ConfigSwitch.config1)
 }
 {{ToLower .FileBaseName}}ConfigSwitch.isSwitch = !{{ToLower .FileBaseName}}ConfigSwitch.isSwitch
-logger.SystemLogger.Info(fmt.Sprintf("load file:%s, success", fs.Name()))
+log.Info(fmt.Sprintf("load file:%s, success", fs.Name()))
 return true
 }
 

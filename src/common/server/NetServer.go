@@ -20,7 +20,8 @@ const DefaultMaxConnectLen = 1024
 var GeneralCodec = new(PackageFactory) //全局的编码解码器
 type ServerInterface interface {
 	CreateNewClient(channel *SocketChannel) NetClientInterface
-	Start()
+	SetServerPort(port int)
+	Start(serverType, serverId, runModule string, startServerCallBack func())
 	Stop()
 }
 
@@ -51,7 +52,7 @@ type ServerNodeStatus struct {
 	RunModule  string `json:"runModule"`
 }
 
-var log = logger.SystemLogger
+var log *logger.Logger
 
 // NewServer initializes and returns a new Server instance with the specified port.
 func NewServer(port int) (server Server) {
@@ -69,9 +70,16 @@ func (this *Server) CreateNewClient(channel *SocketChannel) NetClientInterface {
 	return NewNetClient(channel)
 }
 
+func (this *Server) SetServerPort(port int) {
+	this.port = port
+}
+
 // Start initializes the server, sets up the filter chain, starts listening on the specified port,
 // and accepts incoming TCP connections in a loop.
-func (self *Server) Start() {
+func (self *Server) Start(serverType, serverId, runModule string, startServerCallBack func()) {
+	if log == nil {
+		log = logger.NetLogger
+	}
 	log.Info("[Server] start begin")
 	self.filterChain.AddFilter(&Filter{})
 	self.filterChain.AddFilter(&IpFilter{})
@@ -83,6 +91,10 @@ func (self *Server) Start() {
 		os.Exit(10)
 	}
 	self.listener = lis
+	if startServerCallBack != nil {
+		startServerCallBack()
+	}
+	CreateServerStatus(self, serverType, serverId, runModule)
 	log.Info(fmt.Sprintf("[Server] start end listener port:%d", self.port))
 	for {
 		con, err := self.listener.Accept()
@@ -93,6 +105,7 @@ func (self *Server) Start() {
 		go self.OnAccept(con, self.connectNum)
 		self.connectNum++
 	}
+
 }
 
 // OnAccept handles the acceptance of a new TCP connection, initializes a new SocketChannel, and adds it to the ConnectManager.

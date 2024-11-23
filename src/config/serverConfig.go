@@ -2,7 +2,6 @@ package config
 
 import (
 	"bufio"
-	"common/logger"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -50,7 +49,7 @@ func (self *ServerConfigPtr) GetConfigList() []*ServerConfig {
 func (self *ServerConfigPtr) GetServerConfig(id int32) *ServerConfig {
 	ptr := self.configMap[id]
 	if ptr == nil {
-		logger.SystemLogger.Error(fmt.Sprintf("not found ServerConfig id:%d", id))
+		log.Error(fmt.Sprintf("not found ServerConfig id:%d", id))
 	}
 	return ptr
 }
@@ -79,7 +78,7 @@ func LoadServerConfig(fileUrl string) bool {
 	defer serverConfigSwitch.lock.Unlock()
 	fs, err := os.OpenFile(filepath.Join(fileUrl, "server.txt"), os.O_RDWR, 0755)
 	if err != nil {
-		logger.SystemLogger.Error(fmt.Sprintf("load fileUrl:%s error:%s", fileUrl, err))
+		log.Error(fmt.Sprintf("load fileUrl:%s error:%s", fileUrl, err))
 		return false
 	}
 	defer fs.Close()
@@ -117,7 +116,7 @@ func LoadServerConfig(fileUrl string) bool {
 		serverConfigSwitch.afterLoad(&serverConfigSwitch.config1)
 	}
 	serverConfigSwitch.isSwitch = !serverConfigSwitch.isSwitch
-	logger.SystemLogger.Info(fmt.Sprintf("load file:%s, success", fs.Name()))
+	log.Info(fmt.Sprintf("load file:%s, success", fs.Name()))
 	return true
 }
 

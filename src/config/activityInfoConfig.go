@@ -2,7 +2,6 @@ package config
 
 import (
 	"bufio"
-	"common/logger"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -69,7 +68,7 @@ func (self *ActivityInfoConfigPtr) GetConfigList() []*ActivityInfoConfig {
 func (self *ActivityInfoConfigPtr) GetActivityInfoConfig(id int32) *ActivityInfoConfig {
 	ptr := self.configMap[id]
 	if ptr == nil {
-		logger.SystemLogger.Error(fmt.Sprintf("not found ActivityInfoConfig id:%d", id))
+		log.Error(fmt.Sprintf("not found ActivityInfoConfig id:%d", id))
 	}
 	return ptr
 }
@@ -98,7 +97,7 @@ func LoadActivityInfoConfig(fileUrl string) bool {
 	defer activityinfoConfigSwitch.lock.Unlock()
 	fs, err := os.OpenFile(filepath.Join(fileUrl, "activityInfo.txt"), os.O_RDWR, 0755)
 	if err != nil {
-		logger.SystemLogger.Error(fmt.Sprintf("load fileUrl:%s error:%s", fileUrl, err))
+		log.Error(fmt.Sprintf("load fileUrl:%s error:%s", fileUrl, err))
 		return false
 	}
 	defer fs.Close()
@@ -136,7 +135,7 @@ func LoadActivityInfoConfig(fileUrl string) bool {
 		activityinfoConfigSwitch.afterLoad(&activityinfoConfigSwitch.config1)
 	}
 	activityinfoConfigSwitch.isSwitch = !activityinfoConfigSwitch.isSwitch
-	logger.SystemLogger.Info(fmt.Sprintf("load file:%s, success", fs.Name()))
+	log.Info(fmt.Sprintf("load file:%s, success", fs.Name()))
 	return true
 }
 

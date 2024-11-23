@@ -1,8 +1,14 @@
 package config
 
-import "fmt"
-
-func InitConfigManger(path string) {
+import(
+"fmt"
+"logger"
+)
+var log *logger.Logger
+func InitConfigManger(logger *logger.Logger, path string) {
+if log == nil {
+	log = logger
+}
 {{range .}}
 if !Load{{.}}Config(path) {
 panic(fmt.Sprintf("Load{{.}}Config(path) error"))

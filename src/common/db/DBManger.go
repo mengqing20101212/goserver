@@ -14,7 +14,7 @@ type DBManger struct {
 	connectFlag bool
 }
 
-var DbLogger = logger.DbLogger
+var DbLogger *logger.Logger
 
 func (self *DBManger) IsConnectFlag() bool {
 	return self.connectFlag
@@ -87,6 +87,9 @@ func InitDefaultDataBase(userName, passWord, ip, databases string, port int32) b
 }
 
 func InitDataBase(manger *DBManger, userName, passWord, ip, databases string, port int32) bool {
+	if DbLogger == nil {
+		DbLogger = logger.DbLogger
+	}
 	dbUrl := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", userName, passWord, ip, port, databases)
 	database, err := sqlx.Open("mysql", dbUrl)
 	if err != nil {

@@ -1,6 +1,7 @@
 package gameServer
 
 import (
+	"config"
 	"fmt"
 	"gameProject/common"
 	"gameProject/common/utils"
@@ -16,7 +17,7 @@ type HandlePlayerFunc func(msg proto.Message, channel *GameClient, player *Playe
 
 type GameServer struct {
 	server.Server
-	handlePlayerMap map[int32]HandlePlayerFunc
+	HandlePlayerMap map[int32]HandlePlayerFunc
 }
 
 func (this *GameServer) CreateNewClient(channel *server.SocketChannel) server.NetClientInterface {
@@ -43,7 +44,7 @@ func (this *GameClient) HandleReceivePackageMessage(data *server.OptionData, mgr
 		return true
 	} else { //玩家已经登录
 		player := PlayerManagerInstance.GetPlayer(this.playerId)
-		handle := ServerInstance.handlePlayerMap[cmd]
+		handle := ServerInstance.HandlePlayerMap[cmd]
 		if handle != nil {
 			returnFlag, response := handle(data.PackageMessage.Message, this, player)
 			responseData, err := proto.Marshal(response)
@@ -61,17 +62,19 @@ func (this *GameClient) HandleReceivePackageMessage(data *server.OptionData, mgr
 	return false
 }
 
-var ServerInstance GameServer
+var ServerInstance *GameServer
 
-func (this *GameServer) StartServer(logDir, serverId, env string) {
+func (this *GameServer) StartServer(logDir, serverId, env string, startServerCallBack func()) {
 	begin := utils.GetNow()
-
+	fmt.Println("GameServer StartServer")
 	ServerInstance.Server = server.NewServer(common.Context.Config.ServerPort)
-	gameLogger = common.InitContext(logDir, serverId, env, common.Game, &ServerInstance)
+	gameLogger = common.InitContext(logDir, serverId, env, common.Game, ServerInstance)
+	config.InitConfigManger(logger.SystemLogger, common.Context.Config.ConfigPath)
 	gameLogger.Info("GameServer InitContext success")
-	ServerInstance.Start()
-	server.CreateServerStatus(&ServerInstance.Server, common.Game.String(), serverId, common.ServerRunModule.String())
-	gameLogger.Info(fmt.Sprintf("GameServer StartServer success  useCost:%d", (utils.GetNow()-begin)/1000))
+	ServerInstance.Start(common.Game.String(), serverId, common.ServerRunModule.String(), func() {
+		startServerCallBack()
+		gameLogger.Info(fmt.Sprintf("GameServer StartServer success  useCost:%d", utils.GetNow()-begin))
+	})
 }
 
 func Inithandler(handler server.HandlerInterface) {
@@ -79,7 +82,7 @@ func Inithandler(handler server.HandlerInterface) {
 }
 
 func AddGameServerHandler(cmd int32, handle HandlePlayerFunc) {
-	ServerInstance.handlePlayerMap[cmd] = handle
+	ServerInstance.HandlePlayerMap[cmd] = handle
 
 }
 

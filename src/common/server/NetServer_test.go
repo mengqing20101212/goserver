@@ -13,7 +13,7 @@ import (
 func TestByteServer(t *testing.T) {
 	logger.Init("../logs", "test.log")
 	server := NewServer(2001)
-	server.Start()
+	server.Start("serverType", "serverId", "runModule", nil)
 }
 
 func TestConnecter(t *testing.T) {

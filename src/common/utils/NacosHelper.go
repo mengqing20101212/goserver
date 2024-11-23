@@ -8,6 +8,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	"logger"
 	"strconv"
 )
 
@@ -17,6 +18,7 @@ var ip = "192.168.161.182"
 var serverName = "rpcNodeService"
 var NameClientPtr *naming_client.INamingClient
 var ConfigClientPtr *config_client.IConfigClient
+var log *logger.Logger
 
 // InitNacos 初始化Nacos客户端，包括配置客户端和命名客户端，并注册服务实例。
 // serverId: 服务器ID
@@ -25,6 +27,9 @@ var ConfigClientPtr *config_client.IConfigClient
 // parserConfigCallback: 配置解析回调函数
 func InitNacos(serverId, serverType, env string, parserConfigCallback func(string) int) {
 	//create ServerConfig
+	if log == nil {
+		log = logger.SystemLogger
+	}
 	log.Info(fmt.Sprintln("InitNacos params serverId:", serverId, "serverType:", serverType, "env:", env))
 	var sc = []constant.ServerConfig{
 		*constant.NewServerConfig(ip, 8848),

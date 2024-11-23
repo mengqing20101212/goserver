@@ -11,8 +11,8 @@ var (
 	GameServerStatusKeyEnum RedisKey = RedisKey{key: "GameServerStatus:%s:%s", desc: "服务器状态GameServerStatus:ServerType:ServerId "}
 )
 
-func RedisKeys(serverKeys RedisKey, param ...string) string {
-	return fmt.Sprint(serverKeys.key, param)
+func RedisKeys(serverKeys RedisKey, param ...any) string {
+	return fmt.Sprintf(serverKeys.key, param)
 }
 
 var (
