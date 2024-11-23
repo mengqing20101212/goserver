@@ -1,9 +1,9 @@
 package gameServer
 
 import (
-	"common"
-	"common/utils"
 	"fmt"
+	"gameProject/common"
+	"gameProject/common/utils"
 	"github.com/golang/protobuf/proto"
 	"logger"
 	"protobufMsg"
@@ -63,10 +63,11 @@ func (this *GameClient) HandleReceivePackageMessage(data *server.OptionData, mgr
 
 var ServerInstance GameServer
 
-func (this *GameServer) StartServer(serverId, env string) {
+func (this *GameServer) StartServer(logDir, serverId, env string) {
 	begin := utils.GetNow()
+
 	ServerInstance.Server = server.NewServer(common.Context.Config.ServerPort)
-	gameLogger = common.InitContext("../logs", serverId, env, common.Game, &ServerInstance)
+	gameLogger = common.InitContext(logDir, serverId, env, common.Game, &ServerInstance)
 	gameLogger.Info("GameServer InitContext success")
 	ServerInstance.Start()
 	server.CreateServerStatus(&ServerInstance.Server, common.Game.String(), serverId, common.ServerRunModule.String())

@@ -1,9 +1,9 @@
 package main
 
 import (
-	"common"
-	"common/utils"
 	"encoding/base64"
+	"gameProject/common"
+	"gameProject/common/utils"
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"logger"
 	"os"

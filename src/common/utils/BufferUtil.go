@@ -13,7 +13,7 @@ type ByteBuffer struct {
 	mark   int
 }
 
-var log = logger.Init("../logs", "buffer.log")
+var log = logger.SystemLogger
 
 func (self *ByteBuffer) GetBuffer() *bytes.Buffer {
 	return self.buf

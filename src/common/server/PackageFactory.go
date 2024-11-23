@@ -1,8 +1,8 @@
 package server
 
 import (
-	"common/utils"
 	"fmt"
+	"gameProject/common/utils"
 	"github.com/golang/protobuf/proto"
 )
 

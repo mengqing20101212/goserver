@@ -1,9 +1,9 @@
 package gameServer
 
 import (
-	"common"
-	"common/utils"
 	"fmt"
+	"gameProject/common"
+	"gameProject/common/utils"
 	"server"
 	"sync"
 	"table"
