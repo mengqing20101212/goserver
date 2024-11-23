@@ -102,7 +102,7 @@ func (self *Server) Start(serverType, serverId, runModule string, startServerCal
 		con, err := self.listener.Accept()
 		if err != nil {
 			log.Error(fmt.Sprintf("[Server] Accept error: %s", err))
-			continue
+			return
 		}
 		go self.OnAccept(con, self.connectNum)
 		self.connectNum++

@@ -90,7 +90,7 @@ func InitNacos(serverId, serverType, env string, parserConfigCallback func(strin
 		Metadata:    serverConfig,
 	})
 	if err != nil {
-		print(err)
+		log.Error(err.Error())
 		panic("RegisterInstance error")
 	}
 

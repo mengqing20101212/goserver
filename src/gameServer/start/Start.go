@@ -1,9 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"gameServer"
 	"os"
 )
+
+func testMain1() {
+	for i := 0; i < 10000; i++ {
+		fmt.Println("i") //fmt.Println(i)
+	}
+}
 
 func testMain() {
 	logDir := "../../logs"
