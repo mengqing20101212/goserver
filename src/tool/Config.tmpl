@@ -4,7 +4,7 @@ import (
 "bufio"
 "encoding/json"
 "fmt"
-"goserver/common/logger"
+"common/logger"
 "os"
 "strings"
 "path/filepath"
@@ -13,9 +13,9 @@ import (
 
 type {{.FileBaseName}}Config struct {
 {{makeJson .}}
-//********filed begin********//
+//***** 自定义代码区 filed begin ****
 
-//********filed end********//
+//***** 自定义代码区 filed end ****
 }
 
 type {{.FileBaseName}}ConfigPtr struct {
@@ -30,7 +30,7 @@ return self.configList
 func (self *{{.FileBaseName}}ConfigPtr) Get{{.FileBaseName}}Config(id int32) *{{.FileBaseName}}Config {
 ptr := self.configMap[id]
 if ptr == nil {
-logger.Error(fmt.Sprintf("not found {{.FileBaseName}}Config id:%d", id))
+logger.SystemLogger.Error(fmt.Sprintf("not found {{.FileBaseName}}Config id:%d", id))
 }
 return ptr
 }
@@ -59,7 +59,7 @@ func Load{{.FileBaseName}}Config(fileUrl string) bool {
 defer {{ToLower .FileBaseName}}ConfigSwitch.lock.Unlock()
 fs, err := os.OpenFile(filepath.Join(fileUrl,  "{{.FileBaseNameOld}}.txt"), os.O_RDWR, 0755)
 if err != nil {
-logger.Error(fmt.Sprintf("load fileUrl:%s error:%s", fileUrl, err))
+logger.SystemLogger.Error(fmt.Sprintf("load fileUrl:%s error:%s", fileUrl, err))
 return false
 }
 defer fs.Close()
@@ -97,7 +97,7 @@ if {{ToLower .FileBaseName}}ConfigSwitch.isSwitch {
 {{ToLower .FileBaseName}}ConfigSwitch.afterLoad(&{{ToLower .FileBaseName}}ConfigSwitch.config1)
 }
 {{ToLower .FileBaseName}}ConfigSwitch.isSwitch = !{{ToLower .FileBaseName}}ConfigSwitch.isSwitch
-logger.Info(fmt.Sprintf("load file:%s, success", fs.Name()))
+logger.SystemLogger.Info(fmt.Sprintf("load file:%s, success", fs.Name()))
 return true
 }
 

@@ -1,4 +1,4 @@
-module common
+module gameProject/common
 
 go 1.23.1
 

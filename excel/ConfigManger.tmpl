@@ -1,0 +1,13 @@
+package config
+
+import "fmt"
+
+func InitConfigManger(path string) {
+{{range .}}
+if !Load{{.}}Config(path) {
+panic(fmt.Sprintf("Load{{.}}Config(path) error"))
+}
+
+{{end}}
+
+}

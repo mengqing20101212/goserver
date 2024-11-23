@@ -1,7 +1,7 @@
 @echo off
-ConfigParser
-echo %cd%
-set "tableDir=%cd%\..\config"
+ConfigParser .
+set "tableDir=%cd%\..\src\config"
 cd /d "%tableDir%"
+echo "CurDir:" %cd%
 dir
 go fmt

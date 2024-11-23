@@ -13,12 +13,14 @@ import (
 	"text/template"
 )
 
-var excelDir = "G:\\WORK\\me\\goserver\\excel"
+var excelDir = ""
 var configMap = make(map[string]ExcelData)
 
-func main1() {
+func main() {
 	if len(os.Args) > 1 {
 		excelDir = os.Args[1]
+	} else {
+		excelDir, _ = os.Getwd()
 	}
 	fmt.Println("baseUrl:", excelDir)
 	var files []string
@@ -54,7 +56,6 @@ func main1() {
 	serverList := make([]string, 0)
 	for _, data := range configMap {
 
-		fmt.Println(fmt.Sprintf("data ptr:%p", &data))
 		if data.FileBaseName == "src" {
 			go createServerConfig(data, &wg)
 		} else {
@@ -66,13 +67,12 @@ func main1() {
 
 	createConfigManger(serverList)
 
-	fmt.Println(123)
 }
 
 func createConfigManger(list []string) {
 	outFile := filepath.Join(excelDir, "../src/config", "ConfigManger.go")
 	relativePath := "ConfigManger.tmpl"
-	absPath := filepath.Join(excelDir, "../src/tool", relativePath)
+	absPath := filepath.Join(excelDir, relativePath)
 	tmpl, err := template.New("ConfigManger.tmpl").ParseFiles(absPath)
 	if err != nil {
 		panic(fmt.Sprintf("Error parsing template:%s", err))
@@ -95,9 +95,8 @@ func createConfigManger(list []string) {
 func createConfig(e ExcelData, s *sync.WaitGroup) {
 	defer s.Done()
 	createJsonFile(e)
-
 	relativePath := "Config.tmpl"
-	absPath := filepath.Join(excelDir, "../src/tool", relativePath)
+	absPath := filepath.Join(excelDir, relativePath)
 	tmpl, err := template.New("Config.tmpl").Funcs(template.FuncMap{
 		"TrimSuffix": strings.TrimSuffix,
 		"makeJson":   makeJson,
@@ -119,9 +118,9 @@ func createConfig(e ExcelData, s *sync.WaitGroup) {
 	strBegin := "//***** 自定义代码区 begin ****"
 	strEnd := "//***** 自定义代码区 end ****"
 	scanExtCode := *ScanOutFileExtCode(outFile, strBegin[2:], strEnd)
-	strBeginFiled := "//***** 自定义代码区 begin ****"
-	strEndFiled := "//***** 自定义代码区 end ****"
-	scanExtFiled := *ScanOutFileExtCode(outFile, strBeginFiled, strEndFiled)
+	strBeginFiled := "//***** 自定义代码区 filed begin ****"
+	strEndFiled := "//***** 自定义代码区 filed end ****"
+	scanExtFiled := *ScanOutFileExtCode(outFile, strBeginFiled[2:], strEndFiled)
 	scanExtFiled += "\r\n"
 	os.Remove(outFile)
 	fs, err := os.OpenFile(outFile, os.O_RDWR|os.O_CREATE, 0755)
@@ -149,7 +148,7 @@ func createConfig(e ExcelData, s *sync.WaitGroup) {
 	fs.WriteString(scanExtCode)
 	fs.WriteString("\r\n")
 	fs.WriteString(strEnd)
-	fmt.Println(outFile)
+	fmt.Println("创建config文件:" + outFile)
 }
 
 func makeJson(e ExcelData) string {

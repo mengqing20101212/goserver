@@ -2,11 +2,11 @@ package table
 
 import (
 	"database/sql"
+	"db"
 	"errors"
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"goserver/common/db"
-	"goserver/common/logger"
+	"logger"
 	"unsafe"
 )
 
