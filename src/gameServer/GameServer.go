@@ -73,6 +73,10 @@ func (this *GameServer) StartServer(logDir, serverId, env string, startServerCal
 	gameLogger.Info("GameServer InitContext success")
 	ServerInstance.Start(common.Game.String(), serverId, common.ServerRunModule.String(), func() {
 		startServerCallBack()
+		utils.CreateTaskWithDuration("update game server status", 5000, func(param []any) bool {
+			server.UpdateServerNodeStatus(server.OPEN)
+			return true
+		})
 		gameLogger.Info(fmt.Sprintf("GameServer StartServer success  useCost:%d", utils.GetNow()-begin))
 	})
 }

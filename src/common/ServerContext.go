@@ -87,6 +87,7 @@ type ServerConfig struct {
 	ServerId   string
 	runModule  string `yaml:"runModule"`
 	ConfigPath string `yaml:"configPath"`
+	ServerIp   string `yaml:"serverIp"`
 
 	//TODO http相关
 
@@ -200,7 +201,7 @@ func InitContext(logDir, serverId, env string, serverType ServerType, server ser
 	}
 
 	if server != nil {
-		server.SetServerPort(Context.Config.ServerPort)
+		server.SetServerPort(Context.Config.ServerIp, Context.Config.ServerPort)
 	}
 	return resultLog
 }

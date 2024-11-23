@@ -20,15 +20,16 @@ const DefaultMaxConnectLen = 1024
 var GeneralCodec = new(PackageFactory) //全局的编码解码器
 type ServerInterface interface {
 	CreateNewClient(channel *SocketChannel) NetClientInterface
-	SetServerPort(port int)
+	SetServerPort(ip string, port int)
 	Start(serverType, serverId, runModule string, startServerCallBack func())
 	Stop()
 }
 
 // TCP 服务端连接
 type Server struct {
-	port  int    //端口
-	proto string //协议类型 目前是 只支持 tcp
+	port     int    //端口
+	serverIp string //ip
+	proto    string //协议类型 目前是 只支持 tcp
 
 	filterChain   *FilterChain     // filterChain represents a sequence of filters to process packages in the server.
 	listener      *net.TCPListener // listener holds the TCP listener for accepting incoming connections.
@@ -70,7 +71,8 @@ func (this *Server) CreateNewClient(channel *SocketChannel) NetClientInterface {
 	return NewNetClient(channel)
 }
 
-func (this *Server) SetServerPort(port int) {
+func (this *Server) SetServerPort(ip string, port int) {
+	this.serverIp = ip
 	this.port = port
 }
 
@@ -197,7 +199,7 @@ func UpdateServerNodeStatus(status ServerStatusEnum) {
 
 func CreateServerStatus(server *Server, serverType, serverId, runModule string) {
 	ServerStatus = ServerNodeStatus{
-		Addr:       server.listener.Addr().String(),
+		Addr:       fmt.Sprintf("%s:%d", server.serverIp, server.port),
 		ServerType: serverType,
 		ServerId:   serverId,
 		Load:       0,

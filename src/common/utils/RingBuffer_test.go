@@ -133,7 +133,6 @@ func TestRingBuffer_MakeMask(t *testing.T) {
 				writePos: tt.fields.writePos,
 				makePos:  tt.fields.makePos,
 				capacity: tt.fields.capacity,
-				lock:     tt.fields.lock,
 				model:    tt.fields.model,
 			}
 			ringBuf.MakeMask()
@@ -165,7 +164,6 @@ func TestRingBuffer_RestMask(t *testing.T) {
 				writePos: tt.fields.writePos,
 				makePos:  tt.fields.makePos,
 				capacity: tt.fields.capacity,
-				lock:     tt.fields.lock,
 				model:    tt.fields.model,
 			}
 			ringBuf.RestMask()
@@ -202,8 +200,8 @@ func TestRingBuffer_WriteByte(t *testing.T) {
 				writePos: tt.fields.writePos,
 				makePos:  tt.fields.makePos,
 				capacity: tt.fields.capacity,
-				lock:     tt.fields.lock,
-				model:    tt.fields.model,
+
+				model: tt.fields.model,
 			}
 			if got := ringBuf.WriteByte(tt.args.b); got != tt.want {
 				t.Errorf("WriteByte() = %v, want %v", got, tt.want)
@@ -241,8 +239,8 @@ func TestRingBuffer_WriteUint16(t *testing.T) {
 				writePos: tt.fields.writePos,
 				makePos:  tt.fields.makePos,
 				capacity: tt.fields.capacity,
-				lock:     tt.fields.lock,
-				model:    tt.fields.model,
+
+				model: tt.fields.model,
 			}
 			if got := ringBuf.WriteUint16(tt.args.val); got != tt.want {
 				t.Errorf("WriteUint16() = %v, want %v", got, tt.want)
@@ -281,8 +279,8 @@ func TestRingBuffer_WriteUint16WhiteTimeOut(t *testing.T) {
 				writePos: tt.fields.writePos,
 				makePos:  tt.fields.makePos,
 				capacity: tt.fields.capacity,
-				lock:     tt.fields.lock,
-				model:    tt.fields.model,
+
+				model: tt.fields.model,
 			}
 			if got := ringBuf.WriteUint16WhiteTimeOut(tt.args.val, tt.args.timeout); got != tt.want {
 				t.Errorf("WriteUint16WhiteTimeOut() = %v, want %v", got, tt.want)
@@ -320,8 +318,8 @@ func TestRingBuffer_checkScalingUp(t *testing.T) {
 				writePos: tt.fields.writePos,
 				makePos:  tt.fields.makePos,
 				capacity: tt.fields.capacity,
-				lock:     tt.fields.lock,
-				model:    tt.fields.model,
+
+				model: tt.fields.model,
 			}
 			ringBuf.checkCanWrite(tt.args.writeLen, tt.args.timeout)
 		})
@@ -353,8 +351,8 @@ func TestRingBuffer_toString(t *testing.T) {
 				writePos: tt.fields.writePos,
 				makePos:  tt.fields.makePos,
 				capacity: tt.fields.capacity,
-				lock:     tt.fields.lock,
-				model:    tt.fields.model,
+
+				model: tt.fields.model,
 			}
 			if got := ringBuf.toString(); got != tt.want {
 				t.Errorf("toString() = %v, want %v", got, tt.want)
@@ -392,8 +390,8 @@ func TestRingBuffer_writeVal(t *testing.T) {
 				writePos: tt.fields.writePos,
 				makePos:  tt.fields.makePos,
 				capacity: tt.fields.capacity,
-				lock:     tt.fields.lock,
-				model:    tt.fields.model,
+
+				model: tt.fields.model,
 			}
 			ringBuf.writeVal(tt.args.val, tt.args.len)
 		})

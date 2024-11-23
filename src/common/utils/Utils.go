@@ -17,9 +17,9 @@ func GetYYYY_MM_DD_HH_mm_ss() string {
 var offsetTimer int64 = 0
 var timeLock sync.Mutex
 
-// 获取服务器当前时间戳 毫秒
+// GetNow 获取服务器当前时间戳 毫秒
 func GetNow() int64 {
-	return time.Now().Unix() + offsetTimer
+	return time.Now().UnixMilli() + offsetTimer
 }
 
 func SetOffsetTimer(timer int64) {

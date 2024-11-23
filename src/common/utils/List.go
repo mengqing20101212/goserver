@@ -128,3 +128,9 @@ func (l *List[T]) ForEachAndClear(forEachFunc func(T)) {
 	l.Clear()
 
 }
+
+func (l *List[T]) ForEach(f func(T)) {
+	for _, task := range l.data {
+		f(task)
+	}
+}

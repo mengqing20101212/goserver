@@ -5,6 +5,16 @@ import (
 	"os"
 )
 
+func testMain() {
+	logDir := "../../logs"
+	serverId := "games1001"
+	env := "ly"
+	gameServer.ServerInstance = &gameServer.GameServer{
+		HandlePlayerMap: make(map[int32]gameServer.HandlePlayerFunc),
+	}
+	gameServer.ServerInstance.StartServer(logDir, serverId, env, initHandler)
+}
+
 func main() {
 	gameServer.ServerInstance = &gameServer.GameServer{
 		HandlePlayerMap: make(map[int32]gameServer.HandlePlayerFunc),
